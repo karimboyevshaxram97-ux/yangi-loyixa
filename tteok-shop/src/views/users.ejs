@@ -1,0 +1,70 @@
+<%- include('includes/header') %>
+
+<body>
+  <div class="container mt-4">
+    <nav class="navbar navbar-dark rounded mb-4">
+      <a class="navbar-brand" href="/admin/">🍡 떡방</a>
+      <div>
+        <a href="/admin/" class="btn btn-outline-light btn-sm mr-2">홈</a>
+        <a href="/admin/product/all" class="btn btn-outline-light btn-sm mr-2">제품</a>
+        <a href="/admin/user/all" class="btn btn-light btn-sm mr-2">사용자</a>
+        <a href="/admin/logout" class="btn btn-outline-light btn-sm"
+          onclick="return confirm('로그아웃 하시겠습니까?')">로그아웃</a>
+      </div>
+    </nav>
+
+    <div class="card">
+      <div class="card-header text-white">
+        <h5 class="mb-0">👥 사용자 목록</h5>
+      </div>
+      <div class="card-body">
+        <table class="table table-hover">
+          <thead class="thead-light">
+            <tr>
+              <th>번호</th>
+              <th>사용자명</th>
+              <th>전화번호</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% users.forEach(function(value, index) { %>
+            <tr>
+              <td><%= index + 1 %></td>
+              <td><%= value.memberNick %></td>
+              <td><%= value.memberPhone %></td>
+              <td>
+                <select class="form-control form-control-sm member-status"
+                  id="<%= value._id %>" style="width: 120px;">
+                  <option value="ACTIVE" <%= value.memberStatus === 'ACTIVE' ? 'selected' : '' %>>ACTIVE</option>
+                  <option value="BLOCK" <%= value.memberStatus === 'BLOCK' ? 'selected' : '' %>>BLOCK</option>
+                  <option value="DELETE" <%= value.memberStatus === 'DELETE' ? 'selected' : '' %>>DELETE</option>
+                </select>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    $(function() {
+      $(".member-status").on("change", async function(e) {
+        const id = e.target.id;
+        const memberStatus = $("#" + id + ".member-status").val();
+        try {
+          const response = await axios.post("/admin/user/edit", {
+            _id: id, memberStatus: memberStatus
+          });
+          if (!response.data.data) alert("Update failed!");
+        } catch(err) {
+          alert("Update failed!");
+        }
+      });
+    });
+  </script>
+</body>
+
+<%- include('includes/footer') %>

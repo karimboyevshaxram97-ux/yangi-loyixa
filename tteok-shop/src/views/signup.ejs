@@ -1,0 +1,68 @@
+<%- include('includes/header') %>
+
+<body>
+  <div class="auth-page d-flex justify-content-center align-items-center">
+    <div class="auth-card">
+      <div class="auth-left">
+        <div class="auth-logo">떡</div>
+        <h1>떡방</h1>
+        <p class="auth-lead">가입하고 관리자 패널에 접속하세요. 왼쪽에서 기능을 확인하세요.</p>
+        <ul class="auth-features">
+          <li>🚀 매장 관리</li>
+          <li>🛒 상품 추가 및 편집</li>
+          <li>📊 주문 및 회원 관리</li>
+        </ul>
+        <p class="auth-note">강렬한 검정과 빨강의 브랜드 감각.</p>
+      </div>
+      <div class="auth-right">
+        <form action="/admin/signup" method="POST" enctype="multipart/form-data" class="auth-form">
+          <div class="auth-form-header">
+            <span class="auth-icon">🍡</span>
+            <div>
+              <h2>계정 생성</h2>
+              <p>새 관리자 계정을 만드세요</p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>상점 이름 <span class="required">*</span></label>
+            <input type="text" name="memberNick" class="form-control" placeholder="상점 이름을 입력하세요" required />
+          </div>
+          
+          <div class="form-group">
+            <label>전화번호 <span class="required">*</span></label>
+            <input type="text" name="memberPhone" class="form-control" placeholder="전화번호를 입력하세요" required />
+          </div>
+          
+          <div class="form-group">
+            <label>비밀번호 <span class="required">*</span></label>
+            <input type="password" name="memberPassword" class="form-control" placeholder="비밀번호를 입력하세요" required />
+          </div>
+          
+          <div class="form-group">
+            <label>비밀번호 확인 <span class="required">*</span></label>
+            <input type="password" name="confirmPassword" class="form-control" placeholder="비밀번호를 다시 입력하세요" required />
+          </div>
+          
+          <div class="form-group">
+            <label>상점 이미지</label>
+            <input type="file" name="memberImage" class="form-control-file" required />
+          </div>
+          
+          <input name="memberType" value="TTEOK_SHOP" hidden />
+          
+          <button type="submit" class="btn btn-danger btn-block mt-4">계정 생성</button>
+          
+          <p class="auth-change text-center mt-3">
+            이미 계정이 있나요? <a href="/admin/login">로그인</a>
+          </p>
+          <p class="auth-back text-center">
+            <a href="/admin/">← 홈으로</a>
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+
+<%- include('includes/footer') %>

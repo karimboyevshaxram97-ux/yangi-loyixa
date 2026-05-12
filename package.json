@@ -1,0 +1,10 @@
+{
+  "name": "yangi-loyixa-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start:dev": "cd tteok-shop && npm run start:dev",
+    "start": "cd tteok-shop && npm run start",
+    "build": "cd tteok-shop && npm run build"
+  }
+}

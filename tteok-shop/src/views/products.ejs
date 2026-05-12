@@ -1,0 +1,229 @@
+<%- include('includes/header') %>
+
+<body>
+  <div class="container mt-4">
+    <nav class="navbar navbar-dark rounded mb-4">
+      <a class="navbar-brand" href="/admin/">🍡 떡방</a>
+      <div>
+        <a href="/admin/" class="btn btn-outline-light btn-sm mr-2">홈</a>
+        <a href="/admin/product/all" class="btn btn-light btn-sm mr-2">제품</a>
+        <a href="/admin/user/all" class="btn btn-outline-light btn-sm mr-2">사용자</a>
+        <a href="/admin/logout" class="btn btn-outline-light btn-sm"
+          onclick="return confirm('로그아웃 하시겠습니까?')">로그아웃</a>
+      </div>
+    </nav>
+
+    <div class="card mb-4">
+      <div class="card-header text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">🍡 제품 목록</h5>
+        <button class="btn btn-light btn-sm" id="process-btn">+ 새 제품</button>
+      </div>
+      <div class="card-body">
+        <table class="table table-hover">
+          <thead class="thead-light">
+            <tr>
+              <th>번호</th>
+              <th>이름</th>
+              <th>종류</th>
+              <th>크기 / 용량</th>
+              <th>가격 (₩)</th>
+              <th>재고</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% products.map(function(value, key) { %>
+            <tr>
+              <td><%= key + 1 %></td>
+              <td><%= value.productName %></td>
+              <td><%= value.productCollection %></td>
+              <td>
+                <%= ['SIKHYE','SUJEONGGWA','OMIJA'].includes(value.productCollection)
+                  ? value.productVolume + ' ml'
+                  : value.productSize %>
+              </td>
+              <td><%= value.productPrice %></td>
+              <td><%= value.productLeftCount %></td>
+              <td>
+                <select class="form-control form-control-sm new-product-status"
+                  id="<%= value._id %>" style="width: 120px;">
+                  <option value="PAUSE" <%= value.productStatus === 'PAUSE' ? 'selected' : '' %>>PAUSE</option>
+                  <option value="PROCESS" <%= value.productStatus === 'PROCESS' ? 'selected' : '' %>>PROCESS</option>
+                  <option value="DELETE" <%= value.productStatus === 'DELETE' ? 'selected' : '' %>>DELETE</option>
+                </select>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- NEW PRODUCT FORM -->
+    <div class="card dish-container" style="display:none;">
+      <div class="card-header text-white">
+        <h5 class="mb-0">🍡 New Product</h5>
+      </div>
+      <div class="card-body">
+        <form onsubmit="return validateForm()" action="/admin/product/create"
+          method="POST" enctype="multipart/form-data">
+          <div class="row">
+            <div class="col-md-6 form-group">
+              <label>상품명</label>
+              <input type="text" name="productName" class="form-control product-name"
+                placeholder="예: 인절미, 송편..." required />
+            </div>
+            <div class="col-md-3 form-group">
+              <label>가격 (₩)</label>
+              <input type="number" name="productPrice" class="form-control product-price"
+                placeholder="8000" required />
+            </div>
+            <div class="col-md-3 form-group">
+              <label>재고</label>
+              <input type="number" name="productLeftCount" class="form-control product-left-count"
+                placeholder="50" required />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-4 form-group">
+              <label>상품 종류</label>
+              <select name="productCollection" class="form-control product-collection">
+                <option value="TTEOK" selected>🍡 떡</option>
+                <option value="HANGWA">🍬 한과</option>
+                <option value="SIKHYE">🥤 식혜</option>
+                <option value="SUJEONGGWA">🥤 수정과</option>
+                <option value="OMIJA">🍵 오미자차</option>
+                <option value="SET">🎁 선물세트</option>
+              </select>
+            </div>
+            <div class="col-md-4 form-group" id="product-collection">
+              <label>크기</label>
+              <select name="productSize" class="form-control product-size">
+                <option value="SMALL">스몰 — 100g</option>
+                <option value="NORMAL" selected>노말 — 200g</option>
+                <option value="LARGE">라지 — 300g</option>
+                <option value="FAMILY">패밀리 — 500g</option>
+              </select>
+            </div>
+            <div class="col-md-4 form-group" id="product-volume" style="display:none;">
+              <label>용량</label>
+              <select name="productVolume" class="form-control product-volume">
+                <option value="300">300 ml</option>
+                <option value="500" selected>500 ml</option>
+                <option value="750">750 ml</option>
+                <option value="1000">1,000 ml</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>설명</label>
+            <textarea name="productDesc" class="form-control product-desc"
+              rows="3" placeholder="재료, 맛, 효능 설명..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Product Images</label>
+            <div class="row">
+               <div class="col-md-2 text-center">
+                 <img src="https://via.placeholder.com/80" id="image-section-1" class="img-thumbnail mb-2" style="width:80px; height:80px; object-fit:cover;" />
+                 <input type="file" name="productImages" class="form-control-file" onchange="previewFileHandler(this, 1)" />
+               </div>
+               <div class="col-md-2 text-center">
+                 <img src="https://via.placeholder.com/80" id="image-section-2" class="img-thumbnail mb-2" style="width:80px; height:80px; object-fit:cover;" />
+                 <input type="file" name="productImages" class="form-control-file" onchange="previewFileHandler(this, 2)" />
+               </div>
+               <div class="col-md-2 text-center">
+                 <img src="https://via.placeholder.com/80" id="image-section-3" class="img-thumbnail mb-2" style="width:80px; height:80px; object-fit:cover;" />
+                 <input type="file" name="productImages" class="form-control-file" onchange="previewFileHandler(this, 3)" />
+               </div>
+               <div class="col-md-2 text-center">
+                 <img src="https://via.placeholder.com/80" id="image-section-4" class="img-thumbnail mb-2" style="width:80px; height:80px; object-fit:cover;" />
+                 <input type="file" name="productImages" class="form-control-file" onchange="previewFileHandler(this, 4)" />
+               </div>
+               <div class="col-md-2 text-center">
+                 <img src="https://via.placeholder.com/80" id="image-section-5" class="img-thumbnail mb-2" style="width:80px; height:80px; object-fit:cover;" />
+                 <input type="file" name="productImages" class="form-control-file" onchange="previewFileHandler(this, 5)" />
+               </div>
+              </div>
+          </div>
+
+          <input name="productStatus" value="PAUSE" hidden />
+
+          <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-secondary mr-2" id="cancel-btn">취소</button>
+            <button type="submit" class="btn btn-danger">등록</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DRINK_COLLECTIONS = ["SIKHYE", "SUJEONGGWA", "OMIJA"];
+
+    $(function() {
+      $(".product-collection").on("change", function() {
+        const val = $(this).val();
+        if (DRINK_COLLECTIONS.includes(val)) {
+          $("#product-collection").hide();
+          $("#product-volume").show();
+        } else {
+          $("#product-volume").hide();
+          $("#product-collection").show();
+        }
+      });
+
+      $("#process-btn").on("click", function() {
+        $(".dish-container").slideDown(300);
+        $(this).hide();
+      });
+
+      $("#cancel-btn").on("click", function() {
+        $(".dish-container").slideUp(300);
+        $("#process-btn").show();
+      });
+
+      $(".new-product-status").on("change", async function(e) {
+        const id = e.target.id;
+        const productStatus = $("#" + id).val();
+        try {
+          const response = await axios.post("/admin/product/" + id, { productStatus });
+          if (!response.data.data) alert("Update failed!");
+        } catch(err) {
+          alert("Update failed!");
+        }
+      });
+    });
+
+    function validateForm() {
+      const name = $(".product-name").val();
+      const price = $(".product-price").val();
+      const count = $(".product-left-count").val();
+      const desc = $(".product-desc").val();
+      if (!name || !price || !count || !desc) {
+        alert("Please fill all fields!");
+        return false;
+      }
+      return true;
+    }
+
+    function previewFileHandler(input, order) {
+      const file = input.files[0];
+      if (!file) return;
+      const validTypes = ["image/jpg", "image/jpeg", "image/png"];
+      if (!validTypes.includes(file.type)) {
+        alert("Only jpg, jpeg, png allowed!");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function() {
+        $("#image-section-" + order).attr("src", reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  </script>
+</body>
+
+<%- include('includes/footer') %>
