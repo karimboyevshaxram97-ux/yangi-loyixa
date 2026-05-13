@@ -12,7 +12,10 @@
           <li>🛒 상품 추가 및 편집</li>
           <li>📊 주문 및 회원 관리</li>
         </ul>
-        <p class="auth-note">강렬한 검정과 빨강의 브랜드 감각.</p>
+        <p class="auth-note">부드럽고 환한 톤으로 새 관리자 계정을 시작하세요.</p>
+        <div class="signup-shop-preview-container">
+          <img id="shop-preview" src="https://via.placeholder.com/120" class="signup-shop-preview" />
+        </div>
       </div>
       <div class="auth-right">
         <form action="/admin/signup" method="POST" enctype="multipart/form-data" class="auth-form">
@@ -46,12 +49,12 @@
           
           <div class="form-group">
             <label>상점 이미지</label>
-            <input type="file" name="memberImage" class="form-control-file" required />
+            <input type="file" name="memberImage" class="form-control-file" onchange="previewShopImage(this)" required />
           </div>
           
           <input name="memberType" value="TTEOK_SHOP" hidden />
           
-          <button type="submit" class="btn btn-danger btn-block mt-4">계정 생성</button>
+          <button type="submit" class="btn btn-primary btn-block mt-4">계정 생성</button>
           
           <p class="auth-change text-center mt-3">
             이미 계정이 있나요? <a href="/admin/login">로그인</a>
@@ -64,5 +67,18 @@
     </div>
   </div>
 </body>
+
+<script>
+  function previewShopImage(input) {
+    const file = input.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('shop-preview').src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+</script>
 
 <%- include('includes/footer') %>

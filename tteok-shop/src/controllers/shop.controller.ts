@@ -18,17 +18,7 @@ shopController.goHome = async (req: Request, res: Response) => {
       return;
     }
 
-    try {
-      await memberService.getShop();
-      res.redirect("/admin/login");
-    } catch (innerErr) {
-      if (innerErr instanceof Errors && innerErr.code === HttpCode.NOT_FOUND) {
-        res.redirect("/admin/signup");
-        return;
-      }
-      console.log("Error, goHome getShop:", innerErr);
-      res.redirect("/admin/login");
-    }
+    res.render("home");
   } catch (err) {
     console.log("Error, goHome:", err);
     res.redirect("/admin/login");

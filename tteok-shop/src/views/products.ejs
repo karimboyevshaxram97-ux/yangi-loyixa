@@ -1,5 +1,9 @@
 <%- include('includes/header') %>
 
+
+
+
+
 <body>
   <div class="container mt-4">
     <nav class="navbar navbar-dark rounded mb-4">
@@ -13,7 +17,7 @@
       </div>
     </nav>
 
-    <div class="card mb-4">
+    <div class="card mb-4 products-card">
       <div class="card-header text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0">🍡 제품 목록</h5>
         <button class="btn btn-light btn-sm" id="process-btn">+ 새 제품</button>
@@ -45,9 +49,9 @@
               <td><%= value.productPrice %></td>
               <td><%= value.productLeftCount %></td>
               <td>
-                <select class="form-control form-control-sm new-product-status"
-                  id="<%= value._id %>" style="width: 120px;">
-                  <option value="PAUSE" <%= value.productStatus === 'PAUSE' ? 'selected' : '' %>>PAUSE</option>
+                <select class="form-control form-control-sm new-product-status status-select"
+                  id="<%= value._id %>">
+                  <option value="PAUSE" <%= value.productStatus === 'PAUSE' || !['PROCESS','DELETE'].includes(value.productStatus) ? 'selected' : '' %>>PAUSE</option>
                   <option value="PROCESS" <%= value.productStatus === 'PROCESS' ? 'selected' : '' %>>PROCESS</option>
                   <option value="DELETE" <%= value.productStatus === 'DELETE' ? 'selected' : '' %>>DELETE</option>
                 </select>
@@ -60,7 +64,7 @@
     </div>
 
     <!-- NEW PRODUCT FORM -->
-    <div class="card dish-container" style="display:none;">
+    <div class="card dish-container">
       <div class="card-header text-white">
         <h5 class="mb-0">🍡 New Product</h5>
       </div>
@@ -106,7 +110,7 @@
                 <option value="FAMILY">패밀리 — 500g</option>
               </select>
             </div>
-            <div class="col-md-4 form-group" id="product-volume" style="display:none;">
+            <div class="col-md-4 form-group" id="product-volume">
               <label>용량</label>
               <select name="productVolume" class="form-control product-volume">
                 <option value="300">300 ml</option>
@@ -126,25 +130,17 @@
           <div class="form-group">
             <label>Product Images</label>
             <div class="row">
-               <div class="col-md-2 text-center">
-                 <img src="https://via.placeholder.com/80" id="image-section-1" class="img-thumbnail mb-2" style="width:80px; height:80px; object-fit:cover;" />
+               <div class="col-md-4 text-center product-image-wrapper">
+                 <img src="https://via.placeholder.com/80" id="image-section-1" class="img-thumbnail mb-2 product-image-preview" />
                  <input type="file" name="productImages" class="form-control-file" onchange="previewFileHandler(this, 1)" />
                </div>
-               <div class="col-md-2 text-center">
-                 <img src="https://via.placeholder.com/80" id="image-section-2" class="img-thumbnail mb-2" style="width:80px; height:80px; object-fit:cover;" />
+               <div class="col-md-4 text-center product-image-wrapper">
+                 <img src="https://via.placeholder.com/80" id="image-section-2" class="img-thumbnail mb-2 product-image-preview" />
                  <input type="file" name="productImages" class="form-control-file" onchange="previewFileHandler(this, 2)" />
                </div>
-               <div class="col-md-2 text-center">
-                 <img src="https://via.placeholder.com/80" id="image-section-3" class="img-thumbnail mb-2" style="width:80px; height:80px; object-fit:cover;" />
+               <div class="col-md-4 text-center product-image-wrapper">
+                 <img src="https://via.placeholder.com/80" id="image-section-3" class="img-thumbnail mb-2 product-image-preview" />
                  <input type="file" name="productImages" class="form-control-file" onchange="previewFileHandler(this, 3)" />
-               </div>
-               <div class="col-md-2 text-center">
-                 <img src="https://via.placeholder.com/80" id="image-section-4" class="img-thumbnail mb-2" style="width:80px; height:80px; object-fit:cover;" />
-                 <input type="file" name="productImages" class="form-control-file" onchange="previewFileHandler(this, 4)" />
-               </div>
-               <div class="col-md-2 text-center">
-                 <img src="https://via.placeholder.com/80" id="image-section-5" class="img-thumbnail mb-2" style="width:80px; height:80px; object-fit:cover;" />
-                 <input type="file" name="productImages" class="form-control-file" onchange="previewFileHandler(this, 5)" />
                </div>
               </div>
           </div>
@@ -152,8 +148,8 @@
           <input name="productStatus" value="PAUSE" hidden />
 
           <div class="d-flex justify-content-end">
-            <button type="button" class="btn btn-secondary mr-2" id="cancel-btn">취소</button>
-            <button type="submit" class="btn btn-danger">등록</button>
+            <button type="button" class="btn btn-primary mr-2" id="cancel-btn">취소</button>
+            <button type="submit" class="btn btn-primary">등록</button>
           </div>
         </form>
       </div>
@@ -187,10 +183,17 @@
 
       $(".new-product-status").on("change", async function(e) {
         const id = e.target.id;
-        const productStatus = $("#" + id).val();
+        const productStatus = $(this).val();
+        const $row = $(this).closest("tr");
         try {
           const response = await axios.post("/admin/product/" + id, { productStatus });
-          if (!response.data.data) alert("Update failed!");
+          if (!response.data?.data) {
+            alert("Update failed!");
+            return;
+          }
+          if (productStatus === "DELETE") {
+            $row.fadeOut(250, function() { $(this).remove(); });
+          }
         } catch(err) {
           alert("Update failed!");
         }

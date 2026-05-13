@@ -26,7 +26,8 @@ $(function () {                                                        // DOM to
 
     $(".new-product-status").on("change", async function (e) { 
     const id = e.target.id;                                                          // o‘zgartirilgan select elementining id qiymatini oladi
-    const productStatus = $(`#${id}.new-product-status`).val();                      // tanlangan yangi statusni oladi
+    const productStatus = $(this).val();                                              // tanlangan yangi statusni oladi
+    const $row = $(this).closest("tr");
     
     try {
         
@@ -34,11 +35,14 @@ $(function () {                                                        // DOM to
         console.log("response:", response);                                   // serverdan kelgan javobni konsolga chiqaradi
         const result = response.data;                                       // javobdagi data ni oladi
         if(result.data) {                                                   // agar serverdan ijobiy javob kelsa
-            $(`.new-product-status`).blur();                                // select elementdan fokusni olib tashlaydi
+            $(this).blur();                                // select elementdan fokusni olib tashlaydi
+            if (productStatus === "DELETE") {
+                $row.fadeOut(250, function () { $(this).remove(); });
+            }
         } else alert("Product update failed!");                             // agar muvaffaqiyatsiz bo‘lsa, alert chiqaradi
     } catch(err) {
         console.log(err);                                                   // xatolikni konsolga chiqaradi
-        alert("Product update failed!");                                    // foydalanuvchiga xatolik haqida xabar beradi
+        alert("Product update failed!");                                    // foydalanuvchiga xabar beradi
     }
  });
 

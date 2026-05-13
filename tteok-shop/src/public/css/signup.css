@@ -1,82 +1,31 @@
-﻿/* ====== SIGNUP PAGE RED-BLACK THEME ====== */
-body {
-  margin: 0;
-  min-height: 100vh;
-  background: radial-gradient(circle at top left, rgba(255, 70, 70, 0.20), transparent 18%),
-              radial-gradient(circle at bottom right, rgba(155, 0, 0, 0.28), transparent 30%),
-              linear-gradient(135deg, #140202 0%, #360909 45%, #1e0505 100%);
-  color: #ffeaea;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+﻿/* Signup page specific styles */
+
+/* Shop image preview container */
+.signup-shop-preview-container {
+  margin-top: 100px;
+  text-align: center;
+
+  
 }
 
-.signup-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+/* Shop image preview */
+.signup-shop-preview {
+  width: 350px;
+  height: 350px;
+  border-radius: 12px;
+  object-fit: cover;
+  display: block;
+  margin: 0 auto;
+  
 }
 
-.signup-frame {
-  width: min(520px, 100%);
-  background: rgba(20, 6, 6, 0.95);
-  border-radius: 32px;
-  border: 1px solid rgba(255, 90, 90, 0.18);
-  padding: 36px 32px;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
-}
-
-.signup-frame label {
-  color: #ffdcdc;
-  font-weight: 700;
-}
-
-.signup-frame input,
-.signup-frame select,
-.signup-frame textarea {
-  width: 100%;
-  margin-top: 10px;
-  padding: 14px 18px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 80, 80, 0.34);
-  background: rgba(18, 6, 6, 0.92);
-  color: #ffeaea;
-}
-
-.signup-frame .file-box label {
-  background: linear-gradient(135deg, #b80c0c 0%, #590000 100%);
-  color: #fff;
-}
-
-.signup-frame .upload-name,
-.signup-frame .thumbnail-desc,
-.signup-container .media-text {
-  color: rgba(255, 235, 235, 0.88);
-}
-
-.signup-container a {
-  color: #ffbebe;
-}
-
-.signup-container .signup-btn {
-  width: 100%;
-  margin-top: 26px;
-  padding: 14px 0;
-  border: none;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #ff2a2a 0%, #900000 100%);
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.signup-container .signup-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 40px rgba(255, 45, 45, 0.32);
-}
-
-@media (max-width: 600px) {
-  .signup-frame {
-    padding: 28px 20px;
-  }
+.shop-preview-image {
+  width: 300px; /* kattaroq qilish */
+  height: 300px;
+  border-radius: 50%; /* dumaloq qilish */
+  object-fit: cover;
+  display: block;
+  margin: 0 auto;
+  border: 3px solid rgba(255,255,255,0.3); /* chegara qo'shish */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2); /* soya qo'shish */
 }
