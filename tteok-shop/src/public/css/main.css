@@ -98,8 +98,7 @@ a:hover {
 .btn-primary,
 .btn-danger,
 .btn-light,
-.btn-outline-light,
-.btn-secondary {
+.btn-outline-light {
   transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
 }
 

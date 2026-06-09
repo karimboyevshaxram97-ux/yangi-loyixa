@@ -2,26 +2,50 @@ import { Request, Response } from "express";
 import { T } from "../libs/types/common";
 import Errors, { HttpCode, Message } from "../libs/types/errors";
 import MemberService from "../models/Member.service";
+import OrderService from "../models/Order.service";
 import { LoginInput, MemberInput, MemberUpdateInput } from "../libs/types/member";
 import { AdminRequest } from "../libs/types/member";
 import makeUploader from "../libs/types/utils/uploader";
 
 const memberService = new MemberService();
+const orderService = new OrderService();
 const shopController: T = {};
 
 shopController.goHome = async (req: Request, res: Response) => {
   try {
     console.log("goHome");
-    const session = req.session as any;
-    if (session.member) {
-      res.redirect("/admin/product/all");
-      return;
-    }
-
-    res.render("home");
+    let shop = null, stats = null;
+    try { shop = await memberService.getShop(); } catch (_) {}
+    try { stats = await memberService.getDashboardStats(); } catch (_) {}
+    res.render("home", { shop, stats });
   } catch (err) {
     console.log("Error, goHome:", err);
     res.redirect("/admin/login");
+  }
+};
+
+shopController.getAdminOrders = async (req: Request, res: Response) => {
+  try {
+    console.log("getAdminOrders");
+    const orders = await orderService.getAllOrdersForAdmin();
+    res.render("orders", { orders });
+  } catch (err) {
+    console.log("Error, getAdminOrders:", err);
+    res.render("orders", { orders: [] });
+  }
+};
+
+shopController.updateAdminOrder = async (req: Request, res: Response) => {
+  try {
+    console.log("updateAdminOrder");
+    const id = req.params.id as string;
+    const { orderStatus } = req.body;
+    const result = await orderService.updateAdminOrderStatus(id, orderStatus);
+    res.status(HttpCode.OK).json({ data: result });
+  } catch (err) {
+    console.log("Error, updateAdminOrder:", err);
+    if (err instanceof Errors) res.status(err.code).json(err);
+    else res.status(Errors.standard.code).json(Errors.standard);
   }
 };
 
@@ -68,7 +92,7 @@ shopController.processLogin = async (req: Request, res: Response) => {
           `<script>alert("Session error"); window.location.replace("/admin/login")</script>`
         );
       } else {
-        res.redirect("/admin/product/all");
+        res.redirect("/admin/");
       }
     });
   } catch (err) {
@@ -130,13 +154,28 @@ shopController.processSignup = async (req: AdminRequest, res: Response) => {
   }
 };
 
+shopController.updateShopImage = async (req: AdminRequest, res: Response) => {
+  try {
+    console.log("updateShopImage");
+    if (!req.file) {
+      res.redirect("/admin/");
+      return;
+    }
+    const imagePath = req.file.path.replace(/\\/g, "/");
+    await memberService.updateShopImagePath(imagePath);
+    res.redirect("/admin/");
+  } catch (err) {
+    console.log("Error, updateShopImage:", err);
+    res.redirect("/admin/");
+  }
+};
+
 shopController.logout = async (req: Request, res: Response) => {
   try {
     console.log("logout");
+    await memberService.clearShopImage();
     req.session.destroy((err: any) => {
-      if (err) {
-        console.log("Error destroying session:", err);
-      }
+      if (err) console.log("Error destroying session:", err);
       res.redirect("/admin/login");
     });
   } catch (err) {

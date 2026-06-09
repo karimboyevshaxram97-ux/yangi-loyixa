@@ -31,31 +31,31 @@
             <label>상점 이름 <span class="required">*</span></label>
             <input type="text" name="memberNick" class="form-control" placeholder="상점 이름을 입력하세요" required />
           </div>
-          
+
           <div class="form-group">
             <label>전화번호 <span class="required">*</span></label>
             <input type="text" name="memberPhone" class="form-control" placeholder="전화번호를 입력하세요" required />
           </div>
-          
+
           <div class="form-group">
             <label>비밀번호 <span class="required">*</span></label>
             <input type="password" name="memberPassword" class="form-control" placeholder="비밀번호를 입력하세요" required />
           </div>
-          
+
           <div class="form-group">
             <label>비밀번호 확인 <span class="required">*</span></label>
             <input type="password" name="confirmPassword" class="form-control" placeholder="비밀번호를 다시 입력하세요" required />
           </div>
-          
+
           <div class="form-group">
             <label>상점 이미지</label>
             <input type="file" name="memberImage" class="form-control-file" onchange="previewShopImage(this)" required />
           </div>
-          
+
           <input name="memberType" value="TTEOK_SHOP" hidden />
-          
+
           <button type="submit" class="btn btn-primary btn-block mt-4">계정 생성</button>
-          
+
           <p class="auth-change text-center mt-3">
             이미 계정이 있나요? <a href="/admin/login">로그인</a>
           </p>

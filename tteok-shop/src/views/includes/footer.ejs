@@ -1,2 +1,36 @@
+  <script>
+    (function () {
+      const badge = document.getElementById('inquiry-badge');
+      if (!badge) return;
+
+      let prevCount = -1;
+
+      async function checkPending() {
+        try {
+          const res = await axios.get('/admin/inquiry/pending-count');
+          const count = res.data.count;
+
+          if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = 'flex';
+          } else {
+            badge.style.display = 'none';
+          }
+
+          if (prevCount !== -1 && count > prevCount) {
+            const diff = count - prevCount;
+            if (typeof showToast === 'function') {
+              showToast('📩 새로운 문의가 ' + diff + '건 도착했습니다!', 'success');
+            }
+          }
+
+          prevCount = count;
+        } catch (_) {}
+      }
+
+      checkPending();
+      setInterval(checkPending, 30000);
+    })();
+  </script>
 </body>
 </html>

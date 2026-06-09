@@ -1,4 +1,6 @@
 import { MemberStatus, MemberType } from "../libs/types/enums/member.enum";
+import { ProductStatus } from "../libs/types/enums/product.enum";
+import { InquiryStatus } from "../libs/types/enums/inquiry.enum";
 import Errors, { HttpCode, Message } from "../libs/types/errors";
 import {
   LoginInput,
@@ -7,7 +9,11 @@ import {
   MemberUpdateInput,
 } from "../libs/types/member";
 import MemberModel from "../schema/Member.model";
+import ProductModel from "../schema/Product.model";
+import InquiryModel from "../schema/Inquiry.model";
+import OrderModel from "../schema/Order.model";
 import * as bcrypt from "bcryptjs";
+import * as fs from "fs";
 import { shapeIntoMongooseObjectId } from "../libs/types/config";
 
 class MemberService {
@@ -179,6 +185,48 @@ class MemberService {
       .exec();
     if (!result) throw new Errors(HttpCode.NOT_MODIFIED, Message.UPDATE_FAILED);
     return result;
+  }
+
+  public async updateShopImagePath(imagePath: string): Promise<void> {
+    await this.memberModel
+      .findOneAndUpdate(
+        { memberType: MemberType.TTEOK_SHOP },
+        { memberImage: imagePath }
+      )
+      .exec();
+  }
+
+  public async clearShopImage(): Promise<void> {
+    const shop = await this.memberModel
+      .findOne({ memberType: MemberType.TTEOK_SHOP })
+      .exec();
+    if (!shop || !shop.memberImage) return;
+
+    const imagePath = shop.memberImage;
+    await this.memberModel
+      .findByIdAndUpdate(shop._id, { $unset: { memberImage: "" } })
+      .exec();
+
+    try {
+      if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+    } catch (err) {
+      console.log("Warning: could not delete image file:", err);
+    }
+  }
+
+  public async getDashboardStats(): Promise<{
+    products: number;
+    members: number;
+    pendingInquiries: number;
+    orders: number;
+  }> {
+    const [products, members, pendingInquiries, orders] = await Promise.all([
+      ProductModel.countDocuments({ productStatus: ProductStatus.PROCESS }),
+      this.memberModel.countDocuments({ memberType: { $ne: MemberType.TTEOK_SHOP } }),
+      InquiryModel.countDocuments({ status: InquiryStatus.PENDING }),
+      OrderModel.countDocuments(),
+    ]);
+    return { products, members, pendingInquiries, orders };
   }
 }
 

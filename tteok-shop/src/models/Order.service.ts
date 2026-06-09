@@ -104,6 +104,40 @@ class OrderService {
     return result;
   }
 
+  public async updateAdminOrderStatus(id: string, orderStatus: string): Promise<Order> {
+    const orderId = shapeIntoMongooseObjectId(id);
+    const result = await this.orderModel
+      .findByIdAndUpdate(orderId, { orderStatus }, { new: true })
+      .exec();
+    if (!result) throw new Errors(HttpCode.NOT_MODIFIED, Message.UPDATE_FAILED);
+    return result;
+  }
+
+  public async getAllOrdersForAdmin(): Promise<Order[]> {
+    return await this.orderModel
+      .aggregate([
+        { $sort: { createdAt: -1 } },
+        {
+          $lookup: {
+            from: "orderItems",
+            localField: "_id",
+            foreignField: "orderId",
+            as: "orderItems",
+          },
+        },
+        {
+          $lookup: {
+            from: "members",
+            localField: "memberId",
+            foreignField: "_id",
+            as: "memberData",
+          },
+        },
+        { $unwind: { path: "$memberData", preserveNullAndEmptyArrays: true } },
+      ])
+      .exec();
+  }
+
   public async updateOrder(
     member: Member,
     input: OrderUpdateInput

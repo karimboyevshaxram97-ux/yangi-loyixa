@@ -1,0 +1,280 @@
+<%- include('includes/header') %>
+
+<body>
+  <!-- Toast -->
+  <div id="appToast" style="display:none;position:fixed;top:20px;right:20px;z-index:9999;min-width:280px;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
+    <div id="toastHeader" style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
+      <strong id="toastTitle" style="font-size:.9rem;"></strong>
+      <button onclick="document.getElementById('appToast').style.display='none'" style="background:none;border:none;font-size:1.2rem;cursor:pointer;line-height:1;">&times;</button>
+    </div>
+    <div id="toastBody" style="padding:8px 16px 14px;font-size:.9rem;background:#fff;color:#2d3e57;"></div>
+  </div>
+
+  <div class="container mt-4">
+    <nav class="navbar navbar-dark rounded mb-4">
+      <a class="navbar-brand" href="/admin/">🍡 떡방</a>
+      <div>
+        <a href="/admin/"            class="btn btn-outline-light btn-sm mr-2">홈</a>
+        <a href="/admin/product/all" class="btn btn-outline-light btn-sm mr-2">제품</a>
+        <a href="/admin/user/all"    class="btn btn-outline-light btn-sm mr-2">사용자</a>
+        <a href="/admin/order/all"   class="btn btn-outline-light btn-sm mr-2">주문</a>
+        <span style="position:relative;display:inline-block;margin-right:.5rem;">
+          <a href="/admin/inquiry/all" class="btn btn-light btn-sm">문의</a>
+          <span id="inquiry-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#e55353;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:.65rem;font-weight:800;align-items:center;justify-content:center;padding:0 4px;z-index:10;box-shadow:0 2px 6px rgba(229,83,83,.5);"></span>
+        </span>
+        <a href="/admin/logout"      class="btn btn-outline-light btn-sm"
+           onclick="return confirm('로그아웃 하시겠습니까?')">로그아웃</a>
+      </div>
+    </nav>
+
+    <div class="card">
+      <div class="card-header text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">📩 문의 목록</h5>
+        <span class="badge badge-light">총 <%= inquiries.length %>건</span>
+      </div>
+      <div class="card-body p-0">
+        <% if (inquiries.length === 0) { %>
+          <div class="text-center py-5 text-muted">
+            <p style="font-size:1.1rem;">접수된 문의가 없습니다.</p>
+          </div>
+        <% } else { %>
+        <table class="table table-hover mb-0">
+          <thead class="thead-light">
+            <tr>
+              <th style="width:50px">#</th>
+              <th>이름</th>
+              <th>이메일</th>
+              <th>전화번호</th>
+              <th>문의 내용</th>
+              <th style="width:100px">상태</th>
+              <th style="width:100px">답변</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% inquiries.forEach(function(inq, i) { %>
+            <tr id="row-<%= inq._id %>">
+              <td class="text-muted"><%= i + 1 %></td>
+              <td><strong><%= inq.name %></strong></td>
+              <td><a href="mailto:<%= inq.email %>"><%= inq.email %></a></td>
+              <td><%= inq.phone || '—' %></td>
+              <td>
+                <span class="inq-message"><%= inq.message %></span>
+                <% if (inq.reply) { %>
+                  <div class="inq-reply-preview mt-1">
+                    <small class="text-muted">↩ <%= inq.reply %></small>
+                  </div>
+                <% } %>
+              </td>
+              <td>
+                <span class="badge inq-badge-<%= inq.status.toLowerCase() %>">
+                  <%= inq.status %>
+                </span>
+              </td>
+              <td>
+                <% if (inq.status === 'PENDING') { %>
+                  <button
+                    class="btn btn-sm btn-primary reply-btn"
+                    data-id="<%= inq._id %>"
+                    data-name="<%= inq.name %>"
+                    data-email="<%= inq.email %>"
+                    data-message="<%= inq.message %>">
+                    답변하기
+                  </button>
+                <% } else { %>
+                  <span class="text-success" style="font-size:0.85rem;">✅ 완료</span>
+                <% } %>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPLY MODAL -->
+  <div id="reply-modal" class="inq-modal-backdrop" style="display:none;">
+    <div class="inq-modal">
+      <div class="inq-modal-header">
+        <h5 class="mb-0">✉️ 답변 보내기</h5>
+        <button id="modal-close" class="inq-modal-close">&times;</button>
+      </div>
+      <div class="inq-modal-body">
+        <div class="mb-3">
+          <label class="inq-label">받는 사람</label>
+          <p id="modal-to" class="inq-meta"></p>
+        </div>
+        <div class="mb-3">
+          <label class="inq-label">원래 문의 내용</label>
+          <p id="modal-message" class="inq-original-msg"></p>
+        </div>
+        <div class="mb-3">
+          <label class="inq-label">답변 내용 <span style="color:#e55;">*</span></label>
+          <textarea id="modal-reply" class="form-control" rows="5"
+            placeholder="답변 내용을 입력하세요..."></textarea>
+        </div>
+      </div>
+      <div class="inq-modal-footer">
+        <button id="modal-cancel" class="btn btn-outline-light btn-sm mr-2">취소</button>
+        <button id="modal-send"   class="btn btn-primary">📨 이메일로 답변 발송</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .inq-message {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      font-size: 0.92rem;
+      color: #2d3e57;
+    }
+    .inq-reply-preview {
+      border-left: 3px solid #8bcfff;
+      padding-left: 8px;
+      font-size: 0.82rem;
+    }
+
+    /* Status badges */
+    .inq-badge-pending  { background:#fff3cd; color:#856404; padding:4px 10px; border-radius:999px; font-size:.8rem; font-weight:700; }
+    .inq-badge-replied  { background:#d1e7dd; color:#0a3622; padding:4px 10px; border-radius:999px; font-size:.8rem; font-weight:700; }
+    .inq-badge-closed   { background:#f8d7da; color:#842029; padding:4px 10px; border-radius:999px; font-size:.8rem; font-weight:700; }
+
+    /* Modal */
+    .inq-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(4px);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .inq-modal {
+      background: #fff;
+      border-radius: 20px;
+      width: min(580px, 94vw);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    .inq-modal-header {
+      background: linear-gradient(135deg, #cce8ff, #eff6ff);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #1f3250;
+      font-weight: 700;
+    }
+    .inq-modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #4a6fa2;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .inq-modal-body    { padding: 24px; }
+    .inq-modal-footer  { padding: 16px 24px; background: #f5f9ff; display: flex; justify-content: flex-end; }
+    .inq-label         { font-size:.85rem; font-weight:700; color:#4a6fa2; margin-bottom:4px; display:block; }
+    .inq-meta          { margin:0; font-size:.95rem; color:#1f3250; }
+    .inq-original-msg  {
+      margin: 0;
+      font-size: .9rem;
+      color: #4a6fa2;
+      background: #f0f7ff;
+      border-left: 4px solid #8bcfff;
+      border-radius: 6px;
+      padding: 10px 14px;
+      line-height: 1.6;
+    }
+  </style>
+
+  <script>
+    function showToast(msg, type) {
+      const isOk = type !== 'error';
+      const toast = document.getElementById('appToast');
+      document.getElementById('toastHeader').style.background = isOk ? '#d1e7dd' : '#f8d7da';
+      document.getElementById('toastHeader').style.color = isOk ? '#0a3622' : '#842029';
+      document.getElementById('toastTitle').textContent = isOk ? '✅ 성공' : '❌ 오류';
+      document.getElementById('toastBody').textContent = msg;
+      toast.style.display = 'block';
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => { toast.style.display = 'none'; }, 3500);
+    }
+
+    let currentInquiryId = null;
+
+    $(function () {
+      // Open modal
+      $(".reply-btn").on("click", function () {
+        currentInquiryId = $(this).data("id");
+        const name    = $(this).data("name");
+        const email   = $(this).data("email");
+        const message = $(this).data("message");
+
+        $("#modal-to").text(name + " <" + email + ">");
+        $("#modal-message").text(message);
+        $("#modal-reply").val("");
+        $("#reply-modal").fadeIn(200);
+      });
+
+      // Close modal
+      $("#modal-close, #modal-cancel").on("click", function () {
+        $("#reply-modal").fadeOut(200);
+        currentInquiryId = null;
+      });
+
+      // Close on backdrop click
+      $("#reply-modal").on("click", function (e) {
+        if (e.target === this) {
+          $(this).fadeOut(200);
+          currentInquiryId = null;
+        }
+      });
+
+      // Send reply
+      $("#modal-send").on("click", async function () {
+        const reply = $("#modal-reply").val().trim();
+        if (!reply) {
+          showToast("답변 내용을 입력해 주세요.", "error");
+          return;
+        }
+
+        const $btn = $(this);
+        $btn.prop("disabled", true).text("발송 중...");
+
+        try {
+          const response = await axios.post("/admin/inquiry/reply", {
+            inquiryId: currentInquiryId,
+            reply: reply,
+          });
+
+          if (response.data?.data) {
+            const id = currentInquiryId;
+            $("#row-" + id + " .inq-badge-pending")
+              .removeClass("inq-badge-pending")
+              .addClass("inq-badge-replied")
+              .text("REPLIED");
+            $("#row-" + id + " .reply-btn")
+              .replaceWith('<span class="text-success" style="font-size:.85rem;">✅ 완료</span>');
+            $("#reply-modal").fadeOut(200);
+            currentInquiryId = null;
+            showToast("답변이 이메일로 발송되었습니다.", "success");
+          } else {
+            showToast("답변 발송에 실패했습니다.", "error");
+          }
+        } catch (err) {
+          showToast("오류가 발생했습니다. 다시 시도해 주세요.", "error");
+        } finally {
+          $btn.prop("disabled", false).text("📨 이메일로 답변 발송");
+        }
+      });
+    });
+  </script>
+</body>
+
+<%- include('includes/footer') %>

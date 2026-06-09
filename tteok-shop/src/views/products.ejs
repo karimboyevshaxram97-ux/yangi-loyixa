@@ -5,14 +5,28 @@
 
 
 <body>
+  <!-- Toast -->
+  <div id="appToast" style="display:none;position:fixed;top:20px;right:20px;z-index:9999;min-width:280px;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
+    <div id="toastHeader" style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
+      <strong id="toastTitle" style="font-size:.9rem;"></strong>
+      <button onclick="document.getElementById('appToast').style.display='none'" style="background:none;border:none;font-size:1.2rem;cursor:pointer;line-height:1;">&times;</button>
+    </div>
+    <div id="toastBody" style="padding:8px 16px 14px;font-size:.9rem;background:#fff;color:#2d3e57;"></div>
+  </div>
+
   <div class="container mt-4">
     <nav class="navbar navbar-dark rounded mb-4">
       <a class="navbar-brand" href="/admin/">🍡 떡방</a>
       <div>
         <a href="/admin/" class="btn btn-outline-light btn-sm mr-2">홈</a>
         <a href="/admin/product/all" class="btn btn-light btn-sm mr-2">제품</a>
-        <a href="/admin/user/all" class="btn btn-outline-light btn-sm mr-2">사용자</a>
-        <a href="/admin/logout" class="btn btn-outline-light btn-sm"
+        <a href="/admin/user/all"    class="btn btn-outline-light btn-sm mr-2">사용자</a>
+        <a href="/admin/order/all"   class="btn btn-outline-light btn-sm mr-2">주문</a>
+        <span style="position:relative;display:inline-block;margin-right:.5rem;">
+          <a href="/admin/inquiry/all" class="btn btn-outline-light btn-sm">문의</a>
+          <span id="inquiry-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#e55353;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:.65rem;font-weight:800;align-items:center;justify-content:center;padding:0 4px;z-index:10;box-shadow:0 2px 6px rgba(229,83,83,.5);"></span>
+        </span>
+        <a href="/admin/logout"      class="btn btn-outline-light btn-sm"
           onclick="return confirm('로그아웃 하시겠습니까?')">로그아웃</a>
       </div>
     </nav>
@@ -20,7 +34,7 @@
     <div class="card mb-4 products-card">
       <div class="card-header text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0">🍡 제품 목록</h5>
-        <button class="btn btn-light btn-sm" id="process-btn">+ 새 제품</button>
+        <button class="btn btn-light btn-sm" data-toggle="modal" data-target="#newProductModal">+ 새 제품</button>
       </div>
       <div class="card-body">
         <table class="table table-hover">
@@ -32,7 +46,7 @@
               <th>크기 / 용량</th>
               <th>가격 (₩)</th>
               <th>재고</th>
-              <th>상태</th>
+              <th style="width:140px;">상태</th>
             </tr>
           </thead>
           <tbody>
@@ -50,10 +64,10 @@
               <td><%= value.productLeftCount %></td>
               <td>
                 <select class="form-control form-control-sm new-product-status status-select"
-                  id="<%= value._id %>">
-                  <option value="PAUSE" <%= value.productStatus === 'PAUSE' || !['PROCESS','DELETE'].includes(value.productStatus) ? 'selected' : '' %>>PAUSE</option>
-                  <option value="PROCESS" <%= value.productStatus === 'PROCESS' ? 'selected' : '' %>>PROCESS</option>
-                  <option value="DELETE" <%= value.productStatus === 'DELETE' ? 'selected' : '' %>>DELETE</option>
+                  id="<%= value._id %>" style="height:36px;">
+                  <option value="PAUSE" <%= value.productStatus === 'PAUSE' || !['PROCESS','DELETE'].includes(value.productStatus) ? 'selected' : '' %>>⏸ 일시중지</option>
+                  <option value="PROCESS" <%= value.productStatus === 'PROCESS' ? 'selected' : '' %>>✅ 판매중</option>
+                  <option value="DELETE" <%= value.productStatus === 'DELETE' ? 'selected' : '' %>>🗑 삭제</option>
                 </select>
               </td>
             </tr>
@@ -63,100 +77,119 @@
       </div>
     </div>
 
-    <!-- NEW PRODUCT FORM -->
-    <div class="card dish-container">
-      <div class="card-header text-white">
-        <h5 class="mb-0">🍡 New Product</h5>
-      </div>
-      <div class="card-body">
-        <form onsubmit="return validateForm()" action="/admin/product/create"
-          method="POST" enctype="multipart/form-data">
-          <div class="row">
-            <div class="col-md-6 form-group">
-              <label>상품명</label>
-              <input type="text" name="productName" class="form-control product-name"
-                placeholder="예: 인절미, 송편..." required />
-            </div>
-            <div class="col-md-3 form-group">
-              <label>가격 (₩)</label>
-              <input type="number" name="productPrice" class="form-control product-price"
-                placeholder="8000" required />
-            </div>
-            <div class="col-md-3 form-group">
-              <label>재고</label>
-              <input type="number" name="productLeftCount" class="form-control product-left-count"
-                placeholder="50" required />
-            </div>
-          </div>
+  </div>
 
-          <div class="row">
-            <div class="col-md-4 form-group">
-              <label>상품 종류</label>
-              <select name="productCollection" class="form-control product-collection">
-                <option value="TTEOK" selected>🍡 떡</option>
-                <option value="HANGWA">🍬 한과</option>
-                <option value="SIKHYE">🥤 식혜</option>
-                <option value="SUJEONGGWA">🥤 수정과</option>
-                <option value="OMIJA">🍵 오미자차</option>
-                <option value="SET">🎁 선물세트</option>
-              </select>
-            </div>
-            <div class="col-md-4 form-group" id="product-collection">
-              <label>크기</label>
-              <select name="productSize" class="form-control product-size">
-                <option value="SMALL">스몰 — 100g</option>
-                <option value="NORMAL" selected>노말 — 200g</option>
-                <option value="LARGE">라지 — 300g</option>
-                <option value="FAMILY">패밀리 — 500g</option>
-              </select>
-            </div>
-            <div class="col-md-4 form-group" id="product-volume">
-              <label>용량</label>
-              <select name="productVolume" class="form-control product-volume">
-                <option value="300">300 ml</option>
-                <option value="500" selected>500 ml</option>
-                <option value="750">750 ml</option>
-                <option value="1000">1,000 ml</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>설명</label>
-            <textarea name="productDesc" class="form-control product-desc"
-              rows="3" placeholder="재료, 맛, 효능 설명..."></textarea>
-          </div>
-
-          <div class="form-group">
-            <label>Product Images</label>
+  <!-- NEW PRODUCT MODAL -->
+  <div class="modal fade" id="newProductModal" tabindex="-1" role="dialog" aria-labelledby="newProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header" style="background:linear-gradient(135deg,#4f96de,#8bcfff);">
+          <h5 class="modal-title text-white" id="newProductModalLabel">🍡 새 제품 등록</h5>
+          <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form onsubmit="return validateForm()" action="/admin/product/create"
+            method="POST" enctype="multipart/form-data" id="new-product-form">
             <div class="row">
-               <div class="col-md-4 text-center product-image-wrapper">
-                 <img src="https://via.placeholder.com/80" id="image-section-1" class="img-thumbnail mb-2 product-image-preview" />
-                 <input type="file" name="productImages" class="form-control-file" onchange="previewFileHandler(this, 1)" />
-               </div>
-               <div class="col-md-4 text-center product-image-wrapper">
-                 <img src="https://via.placeholder.com/80" id="image-section-2" class="img-thumbnail mb-2 product-image-preview" />
-                 <input type="file" name="productImages" class="form-control-file" onchange="previewFileHandler(this, 2)" />
-               </div>
-               <div class="col-md-4 text-center product-image-wrapper">
-                 <img src="https://via.placeholder.com/80" id="image-section-3" class="img-thumbnail mb-2 product-image-preview" />
-                 <input type="file" name="productImages" class="form-control-file" onchange="previewFileHandler(this, 3)" />
-               </div>
+              <div class="col-md-6 form-group">
+                <label>상품명</label>
+                <input type="text" name="productName" class="form-control product-name"
+                  placeholder="예: 인절미, 송편..." required />
               </div>
-          </div>
+              <div class="col-md-3 form-group">
+                <label>가격 (₩)</label>
+                <input type="number" name="productPrice" class="form-control product-price"
+                  placeholder="8000" required />
+              </div>
+              <div class="col-md-3 form-group">
+                <label>재고</label>
+                <input type="number" name="productLeftCount" class="form-control product-left-count"
+                  placeholder="50" required />
+              </div>
+            </div>
 
-          <input name="productStatus" value="PAUSE" hidden />
+            <div class="row">
+              <div class="col-md-4 form-group">
+                <label>상품 종류</label>
+                <select name="productCollection" class="form-control product-collection">
+                  <option value="TTEOK" selected>🍡 떡</option>
+                  <option value="HANGWA">🍬 한과</option>
+                  <option value="SIKHYE">🥤 식혜</option>
+                  <option value="SUJEONGGWA">🥤 수정과</option>
+                  <option value="OMIJA">🍵 오미자차</option>
+                  <option value="SET">🎁 선물세트</option>
+                </select>
+              </div>
+              <div class="col-md-4 form-group" id="product-collection">
+                <label>크기</label>
+                <select name="productSize" class="form-control product-size">
+                  <option value="SMALL">스몰 — 100g</option>
+                  <option value="NORMAL" selected>노말 — 200g</option>
+                  <option value="LARGE">라지 — 300g</option>
+                  <option value="FAMILY">패밀리 — 500g</option>
+                </select>
+              </div>
+              <div class="col-md-4 form-group" id="product-volume" style="display:none;">
+                <label>용량</label>
+                <select name="productVolume" class="form-control product-volume">
+                  <option value="300">300 ml</option>
+                  <option value="500" selected>500 ml</option>
+                  <option value="750">750 ml</option>
+                  <option value="1000">1,000 ml</option>
+                </select>
+              </div>
+            </div>
 
-          <div class="d-flex justify-content-end">
-            <button type="button" class="btn btn-primary mr-2" id="cancel-btn">취소</button>
-            <button type="submit" class="btn btn-primary">등록</button>
-          </div>
-        </form>
+            <div class="form-group">
+              <label>설명</label>
+              <textarea name="productDesc" class="form-control product-desc"
+                rows="3" placeholder="재료, 맛, 효능 설명..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>제품 이미지</label>
+              <div class="row">
+                <div class="col-md-4 text-center product-image-wrapper">
+                  <img src="https://via.placeholder.com/80" id="image-section-1" class="img-thumbnail mb-2 product-image-preview" />
+                  <input type="file" name="productImages" class="form-control-file" onchange="previewFileHandler(this, 1)" />
+                </div>
+                <div class="col-md-4 text-center product-image-wrapper">
+                  <img src="https://via.placeholder.com/80" id="image-section-2" class="img-thumbnail mb-2 product-image-preview" />
+                  <input type="file" name="productImages" class="form-control-file" onchange="previewFileHandler(this, 2)" />
+                </div>
+                <div class="col-md-4 text-center product-image-wrapper">
+                  <img src="https://via.placeholder.com/80" id="image-section-3" class="img-thumbnail mb-2 product-image-preview" />
+                  <input type="file" name="productImages" class="form-control-file" onchange="previewFileHandler(this, 3)" />
+                </div>
+              </div>
+            </div>
+
+            <input name="productStatus" value="PAUSE" hidden />
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
+          <button type="submit" form="new-product-form" class="btn btn-primary">등록</button>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
+    function showToast(msg, type) {
+      const isOk = type !== 'error';
+      const toast = document.getElementById('appToast');
+      document.getElementById('toastHeader').style.background = isOk ? '#d1e7dd' : '#f8d7da';
+      document.getElementById('toastHeader').style.color = isOk ? '#0a3622' : '#842029';
+      document.getElementById('toastTitle').textContent = isOk ? '✅ 성공' : '❌ 오류';
+      document.getElementById('toastBody').textContent = msg;
+      toast.style.display = 'block';
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => { toast.style.display = 'none'; }, 3500);
+    }
+
     const DRINK_COLLECTIONS = ["SIKHYE", "SUJEONGGWA", "OMIJA"];
 
     $(function() {
@@ -171,14 +204,12 @@
         }
       });
 
-      $("#process-btn").on("click", function() {
-        $(".dish-container").slideDown(300);
-        $(this).hide();
-      });
-
-      $("#cancel-btn").on("click", function() {
-        $(".dish-container").slideUp(300);
-        $("#process-btn").show();
+      // Modal yopilganda formni tozalash
+      $("#newProductModal").on("hidden.bs.modal", function() {
+        $("#new-product-form")[0].reset();
+        $("#image-section-1, #image-section-2, #image-section-3").attr("src", "https://via.placeholder.com/80");
+        $("#product-collection").show();
+        $("#product-volume").hide();
       });
 
       $(".new-product-status").on("change", async function(e) {
@@ -188,14 +219,14 @@
         try {
           const response = await axios.post("/admin/product/" + id, { productStatus });
           if (!response.data?.data) {
-            alert("Update failed!");
+            showToast("업데이트에 실패했습니다.", "error");
             return;
           }
           if (productStatus === "DELETE") {
             $row.fadeOut(250, function() { $(this).remove(); });
           }
         } catch(err) {
-          alert("Update failed!");
+          showToast("업데이트에 실패했습니다.", "error");
         }
       });
     });

@@ -70,16 +70,25 @@ class ProductService {
       const existView = await this.viewService.checkViewExistence(input);
       if (!existView) {
         await this.viewService.insertMemberView(input);
+        result = await this.productModel
+          .findByIdAndUpdate(
+            productId,
+            { $inc: { productViews: +1 } },
+            { new: true }
+          )
+          .exec();
       }
-      result = await this.productModel
-        .findByIdAndUpdate(
-          productId,
-          { $inc: { productViews: +1 } },
-          { new: true }
-        )
-        .exec();
     }
     return result;
+  }
+
+  public async likeProduct(id: string): Promise<number> {
+    const productId = shapeIntoMongooseObjectId(id);
+    const result = await this.productModel
+      .findByIdAndUpdate(productId, { $inc: { productViews: 1 } }, { new: true })
+      .exec();
+    if (!result) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
+    return result.productViews;
   }
 
   public async getAllProducts(): Promise<Product[]> {

@@ -29,6 +29,9 @@ memberController.signup = async (req: any, res: Response) => {
   try {
     console.log("signup");
     const input: MemberInput = req.body;
+    if (req.file) {
+      input.memberImage = req.file.path.replace(/\\/g, "/");
+    }
     const result = await memberService.Signup(input);
     const token = await authService.createToken(result);
     res.cookie("accessToken", token, { httpOnly: true });

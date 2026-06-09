@@ -1,6 +1,7 @@
 import express from "express";
 import shopController from "./controllers/shop.controller";
 import productController from "./controllers/product.controller";
+import inquiryController from "./controllers/inquiry.controller";
 import makeUploader from "./libs/types/utils/uploader";
 
 const routerAdmin = express.Router();
@@ -16,6 +17,12 @@ routerAdmin.post(
   shopController.processSignup
 );
 routerAdmin.get("/logout", shopController.logout);
+routerAdmin.post(
+  "/update-image",
+  shopController.verifyShop,
+  makeUploader("members").single("memberImage"),
+  shopController.updateShopImage
+);
 routerAdmin.get("/check-me", shopController.checkAuthSession);
 
 /** PRODUCT **/
@@ -36,6 +43,18 @@ routerAdmin.post(
   productController.updateChosenProduct
 );
 
+/** ORDER **/
+routerAdmin.get(
+  "/order/all",
+  shopController.verifyShop,
+  shopController.getAdminOrders
+);
+routerAdmin.post(
+  "/order/:id",
+  shopController.verifyShop,
+  shopController.updateAdminOrder
+);
+
 /** USER **/
 routerAdmin.get(
   "/user/all",
@@ -47,5 +66,10 @@ routerAdmin.post(
   shopController.verifyShop,
   shopController.updateChosenUser
 );
+
+/** INQUIRY **/
+routerAdmin.get("/inquiry/pending-count", shopController.verifyShop, inquiryController.getPendingCount);
+routerAdmin.get("/inquiry/all", shopController.verifyShop, inquiryController.getInquiries);
+routerAdmin.post("/inquiry/reply", shopController.verifyShop, inquiryController.replyToInquiry);
 
 export default routerAdmin;

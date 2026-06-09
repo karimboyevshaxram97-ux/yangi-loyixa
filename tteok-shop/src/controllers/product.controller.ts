@@ -46,6 +46,19 @@ productController.getProduct = async (req: any, res: Response) => {
   }
 };
 
+productController.likeProduct = async (req: any, res: Response) => {
+  try {
+    console.log("likeProduct");
+    const { id } = req.params;
+    const productViews = await productService.likeProduct(id);
+    res.status(HttpCode.OK).json({ productViews });
+  } catch (err) {
+    console.log("Error, likeProduct:", err);
+    if (err instanceof Errors) res.status(err.code).json(err);
+    else res.status(Errors.standard.code).json(Errors.standard);
+  }
+};
+
 productController.getAllProducts = async (req: any, res: Response) => {
   try {
     console.log("getAllProducts");

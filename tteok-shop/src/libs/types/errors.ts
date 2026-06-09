@@ -22,6 +22,12 @@ export enum Message {
   NOT_AUTHENTICATED = "You are not authenticated, please login first!",
   SHOP_ALREADY_EXISTS = "Shop already exists! Only one shop can be registered!",
   IMAGE_REQUIRED = "Shop image is required!",
+  PAYMENT_FAILED = "Payment processing failed!",
+  PAYMENT_NOT_FOUND = "Payment not found!",
+  PAYMENT_ALREADY_PROCESSED = "Payment has already been processed!",
+  REFUND_FAILED = "Refund processing failed!",
+  INVALID_PAYMENT_METHOD = "Invalid payment method!",
+  KAKAO_PAY_ERROR = "KakaoPay API error occurred!",
 }
 
 class Errors extends Error {
