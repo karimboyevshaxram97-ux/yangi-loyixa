@@ -54,8 +54,8 @@
             <% inquiries.forEach(function(inq, i) { %>
             <tr id="row-<%= inq._id %>">
               <td class="text-muted"><%= i + 1 %></td>
-              <td><strong><%= inq.name %></strong></td>
-              <td><a href="mailto:<%= inq.email %>"><%= inq.email %></a></td>
+              <td><strong data-field="name"><%= inq.name %></strong></td>
+              <td><a data-field="email" href="mailto:<%= inq.email %>"><%= inq.email %></a></td>
               <td><%= inq.phone || '—' %></td>
               <td>
                 <span class="inq-message"><%= inq.message %></span>
@@ -74,10 +74,7 @@
                 <% if (inq.status === 'PENDING') { %>
                   <button
                     class="btn btn-sm btn-primary reply-btn"
-                    data-id="<%= inq._id %>"
-                    data-name="<%= inq.name %>"
-                    data-email="<%= inq.email %>"
-                    data-message="<%= inq.message %>">
+                    data-id="<%= inq._id %>">
                     답변하기
                   </button>
                 <% } else { %>
@@ -212,9 +209,10 @@
       // Open modal
       $(".reply-btn").on("click", function () {
         currentInquiryId = $(this).data("id");
-        const name    = $(this).data("name");
-        const email   = $(this).data("email");
-        const message = $(this).data("message");
+        const row = $("#row-" + currentInquiryId);
+        const name    = row.find('[data-field="name"]').text();
+        const email   = row.find('[data-field="email"]').text();
+        const message = row.find(".inq-message").text();
 
         $("#modal-to").text(name + " <" + email + ">");
         $("#modal-message").text(message);

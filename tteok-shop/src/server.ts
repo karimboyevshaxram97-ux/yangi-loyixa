@@ -16,5 +16,12 @@ mongoose
     });
   })
   .catch((err) => {
+    if (err?.codeName === "AtlasError" && /bad auth/i.test(err.message)) {
+      console.error(
+        "Error connecting to MongoDB: authentication failed. Check MONGO_URL username/password in .env."
+      );
+      return;
+    }
+
     console.error("Error connecting to MongoDB:", err);
   });

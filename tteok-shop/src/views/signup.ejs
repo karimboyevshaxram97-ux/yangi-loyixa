@@ -18,7 +18,7 @@
         </div>
       </div>
       <div class="auth-right">
-        <form action="/admin/signup" method="POST" enctype="multipart/form-data" class="auth-form">
+        <form action="/admin/signup" method="POST" enctype="multipart/form-data" class="auth-form" onsubmit="return validateSignupForm(this)">
           <div class="auth-form-header">
             <span class="auth-icon">🍡</span>
             <div>
@@ -69,6 +69,24 @@
 </body>
 
 <script>
+  function validateSignupForm(form) {
+    const password = form.memberPassword.value;
+    const confirmPassword = form.confirmPassword.value;
+    const image = form.memberImage.files[0];
+
+    if (password !== confirmPassword) {
+      alert("Password differs, please check!");
+      return false;
+    }
+
+    if (!image || !image.type.startsWith('image/')) {
+      alert("Please insert only image file!");
+      return false;
+    }
+
+    return true;
+  }
+
   function previewShopImage(input) {
     const file = input.files[0];
     if (file && file.type.startsWith('image/')) {

@@ -1,6 +1,7 @@
 console.log("Home frontend javascript file");
 
 function fitElementToParent(el, padding) {
+  if (!el || !window.anime) return;
   let timeout = null;
 
   function resize() {
@@ -20,9 +21,11 @@ function fitElementToParent(el, padding) {
 
 (function () {
   const sphereEl = document.querySelector(".sphere-animation"),
-  spherePathEls = sphereEl.querySelectorAll(".sphere path"),
+  spherePathEls = sphereEl ? sphereEl.querySelectorAll(".sphere path") : [],
   pathLength = spherePathEls.length,
   animations = [];
+
+  if (!sphereEl || !window.anime) return;
 
   fitElementToParent(sphereEl);
 

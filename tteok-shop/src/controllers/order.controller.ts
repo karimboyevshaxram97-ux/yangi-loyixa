@@ -24,10 +24,15 @@ orderController.getMyOrders = async (req: any, res: Response) => {
   try {
     console.log("getMyOrders");
     const { page, limit, orderStatus } = req.query;
+    const status =
+      typeof orderStatus === "string" &&
+      Object.values(OrderStatus).includes(orderStatus as OrderStatus)
+        ? (orderStatus as OrderStatus)
+        : undefined;
     const inquiry: OrderInquiry = {
-      page: Number(page),
-      limit: Number(limit),
-      orderStatus: orderStatus as OrderStatus,
+      page: Number(page) > 0 ? Number(page) : 1,
+      limit: Number(limit) > 0 ? Math.min(Number(limit), 100) : 20,
+      orderStatus: status as OrderStatus,
     };
     const result = await orderService.getMyOrders(req.member, inquiry);
     res.status(HttpCode.OK).json(result);

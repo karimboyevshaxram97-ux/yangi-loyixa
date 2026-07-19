@@ -1,6 +1,7 @@
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import PaymentModel from "../schema/Payment.model";
+import OrderModel from "../schema/Order.model";
 import { Member } from "../libs/types/member";
 import {
   Payment,
@@ -13,21 +14,26 @@ import {
   KakaoPayCancelResponse,
 } from "../libs/types/payment";
 import { PaymentMethod, PaymentStatus } from "../libs/types/enums/payment.enum";
+import { OrderStatus } from "../libs/types/enums/order.enum";
 import { shapeIntoMongooseObjectId } from "../libs/types/config";
 import Errors, { HttpCode, Message } from "../libs/types/errors";
 
 class PaymentService {
   private readonly paymentModel;
+  private readonly orderModel;
 
   constructor() {
     this.paymentModel = PaymentModel;
+    this.orderModel = OrderModel;
   }
 
-  /** KakaoPay **/
-  public async initiateKakaoPay(
-    member: Member,
-    input: PaymentInput
-  ): Promise<{ nextRedirectPcUrl: string; nextRedirectMobileUrl: string; tid: string }> {
+  private ensurePaymentIntegrationEnabled(): void {
+    if (process.env.ENABLE_PAYMENTS !== "true") {
+      throw new Errors(HttpCode.BAD_REQUEST, Message.INVALID_PAYMENT_METHOD);
+    }
+  }
+
+  private async validatePayableOrder(member: Member, input: PaymentInput) {
     const memberId = shapeIntoMongooseObjectId(member._id);
     let orderId;
     try {
@@ -36,12 +42,36 @@ class PaymentService {
       throw new Errors(HttpCode.BAD_REQUEST, Message.PAYMENT_FAILED);
     }
 
+    const order = await this.orderModel
+      .findOne({
+        _id: orderId,
+        memberId,
+        orderStatus: OrderStatus.PAUSE,
+      })
+      .exec();
+
+    if (!order) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
+    if (Number(input.amount) !== order.orderTotal) {
+      throw new Errors(HttpCode.BAD_REQUEST, Message.PAYMENT_FAILED);
+    }
+
+    return { memberId, orderId, order };
+  }
+
+  /** KakaoPay **/
+  public async initiateKakaoPay(
+    member: Member,
+    input: PaymentInput
+  ): Promise<{ nextRedirectPcUrl: string; nextRedirectMobileUrl: string; tid: string }> {
+    this.ensurePaymentIntegrationEnabled();
+    const { memberId, orderId, order } = await this.validatePayableOrder(member, input);
+
     const payment = await this.paymentModel.create({
       orderId,
       memberId,
       paymentMethod: PaymentMethod.KAKAO,
       paymentStatus: PaymentStatus.PENDING,
-      amount: input.amount,
+      amount: order.orderTotal,
       currency: "KRW",
     });
 
@@ -54,7 +84,7 @@ class PaymentService {
           partner_user_id: String(member._id),
           item_name: "떡 상품",
           quantity: 1,
-          total_amount: input.amount,
+          total_amount: order.orderTotal,
           tax_free_amount: 0,
           approval_url: `${process.env.APP_URL}/payment/kakao/success?paymentId=${payment._id}`,
           fail_url: `${process.env.APP_URL}/payment/kakao/fail?paymentId=${payment._id}`,
@@ -91,13 +121,8 @@ class PaymentService {
     member: Member,
     input: PaymentInput
   ): Promise<{ transactionId: string; paymentUrl: string; serviceId: string }> {
-    const memberId = shapeIntoMongooseObjectId(member._id);
-    let orderId;
-    try {
-      orderId = shapeIntoMongooseObjectId(input.orderId);
-    } catch (_) {
-      throw new Errors(HttpCode.BAD_REQUEST, Message.PAYMENT_FAILED);
-    }
+    this.ensurePaymentIntegrationEnabled();
+    const { memberId, orderId, order } = await this.validatePayableOrder(member, input);
     const transactionId = `SAMSUNG_${uuidv4()}`;
 
     try {
@@ -106,13 +131,13 @@ class PaymentService {
         memberId,
         paymentMethod: PaymentMethod.SAMSUNG,
         paymentStatus: PaymentStatus.PENDING,
-        amount: input.amount,
+        amount: order.orderTotal,
         currency: "KRW",
         transactionId,
       });
 
       // Samsung Pay merchant integration (replace with actual Samsung Pay SDK call)
-      const paymentUrl = `https://api.samsungpay.com/v2/checkout?serviceId=${process.env.SAMSUNG_PAY_SERVICE_ID}&orderId=${input.orderId}&amount=${input.amount}&transactionId=${transactionId}`;
+      const paymentUrl = `https://api.samsungpay.com/v2/checkout?serviceId=${process.env.SAMSUNG_PAY_SERVICE_ID}&orderId=${input.orderId}&amount=${order.orderTotal}&transactionId=${transactionId}`;
 
       return {
         transactionId,
@@ -130,13 +155,8 @@ class PaymentService {
     member: Member,
     input: PaymentInput
   ): Promise<{ transactionId: string; merchantSession: object }> {
-    const memberId = shapeIntoMongooseObjectId(member._id);
-    let orderId;
-    try {
-      orderId = shapeIntoMongooseObjectId(input.orderId);
-    } catch (_) {
-      throw new Errors(HttpCode.BAD_REQUEST, Message.PAYMENT_FAILED);
-    }
+    this.ensurePaymentIntegrationEnabled();
+    const { memberId, orderId, order } = await this.validatePayableOrder(member, input);
     const transactionId = `APPLE_${uuidv4()}`;
 
     try {
@@ -145,7 +165,7 @@ class PaymentService {
         memberId,
         paymentMethod: PaymentMethod.APPLE,
         paymentStatus: PaymentStatus.PENDING,
-        amount: input.amount,
+        amount: order.orderTotal,
         currency: "KRW",
         transactionId,
       });
@@ -171,13 +191,8 @@ class PaymentService {
     member: Member,
     input: CreditCardInput
   ): Promise<{ transactionId: string; status: PaymentStatus }> {
-    const memberId = shapeIntoMongooseObjectId(member._id);
-    let orderId;
-    try {
-      orderId = shapeIntoMongooseObjectId(input.orderId);
-    } catch (_) {
-      throw new Errors(HttpCode.BAD_REQUEST, Message.PAYMENT_FAILED);
-    }
+    this.ensurePaymentIntegrationEnabled();
+    const { memberId, orderId, order } = await this.validatePayableOrder(member, input);
     const transactionId = `CARD_${uuidv4()}`;
 
     try {
@@ -186,7 +201,7 @@ class PaymentService {
         memberId,
         paymentMethod: PaymentMethod.CREDIT_CARD,
         paymentStatus: PaymentStatus.PENDING,
-        amount: input.amount,
+        amount: order.orderTotal,
         currency: "KRW",
         transactionId,
       });
@@ -201,9 +216,11 @@ class PaymentService {
   }
 
   /** Confirm Payment **/
-  public async confirmPayment(input: PaymentConfirmInput): Promise<Payment> {
+  public async confirmPayment(member: Member, input: PaymentConfirmInput): Promise<Payment> {
+    this.ensurePaymentIntegrationEnabled();
+    const memberId = shapeIntoMongooseObjectId(member._id);
     const existingPayment = await this.paymentModel
-      .findOne({ transactionId: input.transactionId })
+      .findOne({ transactionId: input.transactionId, memberId })
       .exec();
 
     if (!existingPayment)
@@ -248,25 +265,16 @@ class PaymentService {
         if (!updatedPayment)
           throw new Errors(HttpCode.NOT_MODIFIED, Message.UPDATE_FAILED);
 
+        await this.orderModel
+          .findByIdAndUpdate(existingPayment.orderId, {
+            orderStatus: OrderStatus.PROCESS,
+          })
+          .exec();
+
         return updatedPayment as unknown as Payment;
       }
 
-      // Samsung Pay, Apple Pay, Credit Card confirmation
-      const updatedPayment = await this.paymentModel
-        .findOneAndUpdate(
-          { transactionId: input.transactionId },
-          {
-            paymentStatus: PaymentStatus.SUCCESS,
-            paidAt: new Date(),
-          },
-          { new: true }
-        )
-        .exec();
-
-      if (!updatedPayment)
-        throw new Errors(HttpCode.NOT_MODIFIED, Message.UPDATE_FAILED);
-
-      return updatedPayment as unknown as Payment;
+      throw new Errors(HttpCode.BAD_REQUEST, Message.INVALID_PAYMENT_METHOD);
     } catch (err) {
       if (err instanceof Errors) throw err;
       console.log("Error, confirmPayment:", err);
@@ -275,9 +283,11 @@ class PaymentService {
   }
 
   /** Refund Payment **/
-  public async refundPayment(input: PaymentRefundInput): Promise<Payment> {
+  public async refundPayment(member: Member, input: PaymentRefundInput): Promise<Payment> {
+    this.ensurePaymentIntegrationEnabled();
+    const memberId = shapeIntoMongooseObjectId(member._id);
     const existingPayment = await this.paymentModel
-      .findOne({ transactionId: input.transactionId })
+      .findOne({ transactionId: input.transactionId, memberId })
       .exec();
 
     if (!existingPayment)
@@ -316,6 +326,12 @@ class PaymentService {
 
       if (!updatedPayment)
         throw new Errors(HttpCode.NOT_MODIFIED, Message.REFUND_FAILED);
+
+      await this.orderModel
+        .findByIdAndUpdate(existingPayment.orderId, {
+          orderStatus: OrderStatus.DELETE,
+        })
+        .exec();
 
       return updatedPayment as unknown as Payment;
     } catch (err) {

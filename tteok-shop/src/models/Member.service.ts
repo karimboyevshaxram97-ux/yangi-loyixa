@@ -32,6 +32,8 @@ class MemberService {
   }
 
   public async Signup(input: MemberInput): Promise<Member> {
+    input.memberType = MemberType.USER;
+    input.memberStatus = MemberStatus.ACTIVE;
     const salt = await bcrypt.genSalt();
     input.memberPassword = await bcrypt.hash(input.memberPassword, salt);
     try {
@@ -80,8 +82,23 @@ class MemberService {
     input: MemberUpdateInput
   ): Promise<Member> {
     const memberId = shapeIntoMongooseObjectId(member._id);
+    const updateInput: MemberUpdateInput = {} as MemberUpdateInput;
+    if (input.memberNick) updateInput.memberNick = input.memberNick;
+    if (input.memberPhone) updateInput.memberPhone = input.memberPhone;
+    if (input.memberAddress !== undefined) updateInput.memberAddress = input.memberAddress;
+    if (input.memberDesc !== undefined) updateInput.memberDesc = input.memberDesc;
+    if (input.memberImage) updateInput.memberImage = input.memberImage;
+
     const result = await this.memberModel
-      .findOneAndUpdate({ _id: memberId }, input, { new: true })
+      .findOneAndUpdate(
+        {
+          _id: memberId,
+          memberType: MemberType.USER,
+          memberStatus: MemberStatus.ACTIVE,
+        },
+        updateInput,
+        { new: true }
+      )
       .exec();
     if (!result) throw new Errors(HttpCode.NOT_MODIFIED, Message.UPDATE_FAILED);
     return result;
@@ -179,9 +196,16 @@ class MemberService {
   }
 
   public async updateChosenUser(input: MemberUpdateInput): Promise<Member> {
+    if (!Object.values(MemberStatus).includes(input.memberStatus as MemberStatus)) {
+      throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
+    }
     input._id = shapeIntoMongooseObjectId(input._id);
     const result = await this.memberModel
-      .findByIdAndUpdate({ _id: input._id }, input, { new: true })
+      .findOneAndUpdate(
+        { _id: input._id, memberType: MemberType.USER },
+        { memberStatus: input.memberStatus },
+        { new: true }
+      )
       .exec();
     if (!result) throw new Errors(HttpCode.NOT_MODIFIED, Message.UPDATE_FAILED);
     return result;

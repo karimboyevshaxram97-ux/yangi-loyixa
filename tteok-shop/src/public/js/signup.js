@@ -7,6 +7,11 @@ $(function () {
     fileTarget.on("change", function () {
         if (window.FileReader) {
             const uploadFile = $(this)[0].files[0],
+             hasFile = Boolean(uploadFile);
+
+            if (!hasFile) return;
+
+            const
              fileType = uploadFile["type"],
              validImageType = ["image/jpg", "image/jpeg", "image/png"];
             
@@ -26,11 +31,11 @@ $(function () {
     });
 });
 
-function validateSignupForm() {
-  const memberNick = $(".member-nick").val(),
-   memberPhone = $(".member-phone").val(),
-   memberPassword = $(".member-password").val(),
-    confirmPassword = $(".confirm-password").val();
+function validateSignupForm(form) {
+  const memberNick = form ? form.memberNick.value : $(".member-nick").val(),
+   memberPhone = form ? form.memberPhone.value : $(".member-phone").val(),
+   memberPassword = form ? form.memberPassword.value : $(".member-password").val(),
+    confirmPassword = form ? form.confirmPassword.value : $(".confirm-password").val();
 
   if (
     memberNick === "" ||
@@ -47,11 +52,14 @@ function validateSignupForm() {
     return false;
   }
 
-   const memberImage = $(".member-image").get(0).files[0].name
-   ? $(".member-image").get(0).files[0].name
+   const memberImageInput = form ? form.memberImage : $(".member-image").get(0);
+   const memberImage = memberImageInput && memberImageInput.files[0]
+   ? memberImageInput.files[0].name
    : null
    if (!memberImage) {
     alert("please insert restaurant image!");
     return false;
    }
+
+   return true;
 }

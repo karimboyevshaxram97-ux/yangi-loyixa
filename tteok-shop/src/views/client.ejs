@@ -131,8 +131,36 @@
   </section>
 
   <script>
+    function escapeHTML(value) {
+      return String(value ?? '').replace(/[&<>"']/g, function (ch) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[ch];
+      });
+    }
+
+    function escapeAttr(value) {
+      return escapeHTML(value).replace(/`/g, '&#96;');
+    }
+
+    function safeUploadPath(value) {
+      const path = String(value ?? '');
+      return /^[a-zA-Z0-9_./-]+$/.test(path) ? path : '';
+    }
+
     // ── 장바구니 상태 ──
-    let cart = JSON.parse(localStorage.getItem('tteok_cart') || '[]');
+    let cart = [];
+    try {
+      cart = JSON.parse(localStorage.getItem('tteok_cart') || '[]');
+      if (!Array.isArray(cart)) cart = [];
+    } catch (_) {
+      cart = [];
+      localStorage.removeItem('tteok_cart');
+    }
 
     function saveCart() {
       localStorage.setItem('tteok_cart', JSON.stringify(cart));
@@ -198,11 +226,13 @@
       container.innerHTML = cart.map((item, idx) => {
         const sub = item.price * item.qty;
         totalPrice += sub;
+        const itemName = escapeHTML(item.name);
+        const itemPrice = Number(item.price) || 0;
         return `
           <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid #f0f0f0;">
             <div style="flex:1;">
-              <div style="font-weight:700;color:#1f3250;font-size:.95rem;">${item.name}</div>
-              <div style="color:#7a9abf;font-size:.85rem;margin-top:2px;">₩${item.price.toLocaleString()} × ${item.qty}</div>
+              <div style="font-weight:700;color:#1f3250;font-size:.95rem;">${itemName}</div>
+              <div style="color:#7a9abf;font-size:.85rem;margin-top:2px;">₩${itemPrice.toLocaleString()} × ${item.qty}</div>
             </div>
             <div style="font-weight:800;color:#4f96de;min-width:70px;text-align:right;">₩${sub.toLocaleString()}</div>
             <div style="display:flex;align-items:center;gap:6px;">
@@ -230,6 +260,7 @@
     }
 
     // ── 결제 상태 ──
+    const PAYMENT_ENABLED = false;
     let currentOrderId  = null;
     let currentAmount   = 0;
     let selectedMethod  = 'CREDIT_CARD';
@@ -258,6 +289,10 @@
 
     async function checkout() {
       if (cart.length === 0) return;
+      if (!PAYMENT_ENABLED) {
+        alert('결제 기능은 아직 준비 중입니다.');
+        return;
+      }
 
       const items = cart.map(i => ({
         productId:    i.id,
@@ -288,41 +323,11 @@
 
     async function completePayment() {
       if (!currentOrderId) return;
-      const btn    = document.getElementById('pay-btn');
       const errEl  = document.getElementById('pay-error');
       errEl.style.display = 'none';
-      btn.disabled = true;
-      btn.textContent = '처리 중...';
-
-      const methodMap = {
-        CREDIT_CARD: 'credit',
-        KAKAO:       'kakao',
-        SAMSUNG:     'samsung',
-        APPLE:       'apple',
-      };
-
-      try {
-        const readyRes = await axios.post(`/payment/${methodMap[selectedMethod]}/ready`, {
-          orderId: currentOrderId,
-          amount:  currentAmount,
-        });
-
-        const transactionId = readyRes.data.tid || readyRes.data.transactionId;
-
-        await axios.post('/payment/confirm', {
-          transactionId,
-          paymentMethod: selectedMethod,
-        });
-
-        document.getElementById('payment-overlay').style.display = 'none';
-        document.getElementById('checkout-success').style.display = 'flex';
-        currentOrderId = null;
-      } catch (err) {
-        errEl.textContent = '결제 처리 중 오류가 발생했습니다. 다시 시도해 주세요.';
+      if (!PAYMENT_ENABLED) {
+        errEl.textContent = '결제 기능은 아직 준비 중입니다.';
         errEl.style.display = 'block';
-      } finally {
-        btn.disabled = false;
-        btn.textContent = '결제완료';
       }
     }
 
@@ -340,32 +345,56 @@
           return;
         }
 
-        list.innerHTML = products.map(p => `
-          <div style="background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.07);transition:transform .2s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
-            ${p.productImages && p.productImages[0]
-              ? `<img src="/${p.productImages[0]}" style="width:100%;height:200px;object-fit:cover;" />`
-              : `<div style="width:100%;height:200px;background:linear-gradient(135deg,#cce8ff,#eff6ff);display:flex;align-items:center;justify-content:center;font-size:3rem;">🍡</div>`
-            }
-            <div style="padding:20px;">
-              <h3 style="margin:0 0 6px;color:#1f3250;font-size:1.1rem;">${p.productName}</h3>
-              <p style="margin:0 0 12px;color:#7a9abf;font-size:.85rem;">${p.productCollection}</p>
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-                <span style="font-weight:800;color:#4f96de;font-size:1.1rem;">₩${p.productPrice?.toLocaleString()}</span>
-                <span style="font-size:.8rem;color:#aaa;">재고: ${p.productLeftCount}</span>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                <button onclick="likeProduct(event,'${p._id}')" style="display:flex;align-items:center;gap:5px;background:none;border:1.5px solid #ffd0d0;border-radius:999px;padding:5px 14px;cursor:pointer;font-size:.85rem;color:#e57373;font-weight:600;transition:all .2s;" onmouseover="this.style.background='#fff0f0'" onmouseout="this.style.background='none'">
-                  ❤️ <span id="likes-${p._id}">${p.productViews ?? 0}</span>
+        list.innerHTML = products.map(p => {
+          const id = escapeAttr(p._id);
+          const name = escapeHTML(p.productName);
+          const nameAttr = escapeAttr(p.productName);
+          const collection = escapeHTML(p.productCollection);
+          const price = Number(p.productPrice) || 0;
+          const leftCount = Number(p.productLeftCount) || 0;
+          const views = Number(p.productViews) || 0;
+          const imagePath = safeUploadPath(p.productImages && p.productImages[0]);
+          const isSoldOut = leftCount <= 0;
+
+          return `
+            <div style="background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.07);transition:transform .2s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
+              ${imagePath
+                ? `<img src="/${escapeAttr(imagePath)}" alt="${nameAttr}" style="width:100%;height:200px;object-fit:cover;" />`
+                : `<div style="width:100%;height:200px;background:linear-gradient(135deg,#cce8ff,#eff6ff);display:flex;align-items:center;justify-content:center;font-size:3rem;">🍡</div>`
+              }
+              <div style="padding:20px;">
+                <h3 style="margin:0 0 6px;color:#1f3250;font-size:1.1rem;">${name}</h3>
+                <p style="margin:0 0 12px;color:#7a9abf;font-size:.85rem;">${collection}</p>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                  <span style="font-weight:800;color:#4f96de;font-size:1.1rem;">₩${price.toLocaleString()}</span>
+                  <span style="font-size:.8rem;color:${isSoldOut ? '#e57373' : '#aaa'};">재고: ${leftCount}</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                  <button class="like-product-btn" data-id="${id}" style="display:flex;align-items:center;gap:5px;background:none;border:1.5px solid #ffd0d0;border-radius:999px;padding:5px 14px;cursor:pointer;font-size:.85rem;color:#e57373;font-weight:600;transition:all .2s;" onmouseover="this.style.background='#fff0f0'" onmouseout="this.style.background='none'">
+                    ❤️ <span id="likes-${id}">${views}</span>
+                  </button>
+                </div>
+                <button class="add-cart-btn" data-id="${id}" data-name="${nameAttr}" data-price="${price}" ${isSoldOut ? 'disabled' : ''}
+                  style="width:100%;padding:10px;border-radius:999px;background:linear-gradient(135deg,#8bcfff,#b6def5);border:none;color:#1f3250;font-weight:700;cursor:${isSoldOut ? 'not-allowed' : 'pointer'};font-size:.9rem;transition:opacity .2s;opacity:${isSoldOut ? '.55' : '1'};"
+                  onmouseover="if(!this.disabled)this.style.opacity='.85'" onmouseout="if(!this.disabled)this.style.opacity='1'">
+                  ${isSoldOut ? '품절' : '🛒 담기'}
                 </button>
               </div>
-              <button onclick="addToCart('${p._id}','${p.productName}',${p.productPrice})"
-                style="width:100%;padding:10px;border-radius:999px;background:linear-gradient(135deg,#8bcfff,#b6def5);border:none;color:#1f3250;font-weight:700;cursor:pointer;font-size:.9rem;transition:opacity .2s;"
-                onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-                🛒 담기
-              </button>
             </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
+
+        list.querySelectorAll('.add-cart-btn').forEach(btn => {
+          btn.addEventListener('click', function () {
+            addToCart(this.dataset.id, this.dataset.name, Number(this.dataset.price));
+          });
+        });
+
+        list.querySelectorAll('.like-product-btn').forEach(btn => {
+          btn.addEventListener('click', function (event) {
+            likeProduct(event, this.dataset.id);
+          });
+        });
       } catch (err) {
         document.getElementById('product-list').innerHTML = '<p style="text-align:center;color:#e55;grid-column:1/-1;">제품을 불러오지 못했습니다.</p>';
       }

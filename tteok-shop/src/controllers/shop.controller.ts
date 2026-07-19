@@ -173,7 +173,6 @@ shopController.updateShopImage = async (req: AdminRequest, res: Response) => {
 shopController.logout = async (req: Request, res: Response) => {
   try {
     console.log("logout");
-    await memberService.clearShopImage();
     req.session.destroy((err: any) => {
       if (err) console.log("Error destroying session:", err);
       res.redirect("/admin/login");

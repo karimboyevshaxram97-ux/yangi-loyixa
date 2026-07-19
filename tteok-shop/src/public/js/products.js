@@ -2,10 +2,11 @@
 
 
 $(function () {                                                        // DOM to‘liq yuklangandan keyin kod ishlaydi
+    const DRINK_COLLECTIONS = ["SIKHYE", "SUJEONGGWA", "OMIJA"];
 
     $(".product-collection").on("change", () => {                       // product-collection select o‘zgarganda
         const selectedValue = $(".product-collection").val();           // tanlangan qiymatni oladi
-        if (selectedValue === "DRINK") {                                // agar qiymat "DRINK" bo‘lsa
+        if (DRINK_COLLECTIONS.includes(selectedValue)) {                 // agar ichimlik collection bo‘lsa
             $("#product-collection").hide();                            // product-collection inputni yashiradi
             $("#product-volume").show();                                // product-volume inputni ko‘rsatadi
         } else {                                                        // aks holda
@@ -72,10 +73,8 @@ function validateForm() {
 
 //==============product images=====
 function previewFileHandler(input, order) {
-    const imgClassName = input.className;                                         // input elementning class nomini oladi
-    console.log("input:", input);                                                // input elementni konsolga chiqaradi (debug uchun)
-
-    const file = $(`.${imgClassName}`).get(0).files[0];                         // input orqali tanlangan faylni oladi
+    const file = input.files && input.files[0];                                 // input orqali tanlangan faylni oladi
+    if (!file) return;
     const fileType = file["type"];                                              // faylning turini oladi (masalan: image/png)
     const validImageType = ["image/jpg", "image/jpeg", "image/png"];              // ruxsat etilgan fayl turlari
 

@@ -11,10 +11,15 @@ import ConnectMongoDB from "connect-mongodb-session";
 import { T } from "./libs/types/common";
 
 const MongoDBStore = ConnectMongoDB(session);
-const store = new MongoDBStore({
-  uri: String(process.env.MONGO_URL),
-  collection: "sessions",
-});
+const store = new MongoDBStore(
+  {
+    uri: String(process.env.MONGO_URL),
+    collection: "sessions",
+  },
+  (error) => {
+    if (error) console.error("MongoDB session store error:", error.message);
+  }
+);
 
 const app = express();
 

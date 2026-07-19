@@ -70,7 +70,7 @@ paymentController.initiateCreditCard = async (req: any, res: Response) => {
 };
 
 /** POST /payment/confirm **/
-paymentController.confirmPayment = async (req: Request, res: Response) => {
+paymentController.confirmPayment = async (req: any, res: Response) => {
   try {
     console.log("confirmPayment");
     const input: PaymentConfirmInput = {
@@ -78,7 +78,7 @@ paymentController.confirmPayment = async (req: Request, res: Response) => {
       paymentMethod: req.body.paymentMethod as PaymentMethod,
       pgToken: req.body.pgToken,
     };
-    const result = await paymentService.confirmPayment(input);
+    const result = await paymentService.confirmPayment(req.member, input);
     res.status(HttpCode.OK).json(result);
   } catch (err) {
     console.log("Error, confirmPayment:", err);
@@ -88,11 +88,11 @@ paymentController.confirmPayment = async (req: Request, res: Response) => {
 };
 
 /** POST /payment/refund **/
-paymentController.refundPayment = async (req: Request, res: Response) => {
+paymentController.refundPayment = async (req: any, res: Response) => {
   try {
     console.log("refundPayment");
     const input: PaymentRefundInput = { transactionId: req.body.transactionId };
-    const result = await paymentService.refundPayment(input);
+    const result = await paymentService.refundPayment(req.member, input);
     res.status(HttpCode.OK).json(result);
   } catch (err) {
     console.log("Error, refundPayment:", err);

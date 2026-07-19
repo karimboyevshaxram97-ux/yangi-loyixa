@@ -7,7 +7,7 @@ import {
 } from "../libs/types/product";
 import ProductModel from "../schema/Product.model";
 import { shapeIntoMongooseObjectId } from "../libs/types/config";
-import { ProductStatus } from "../libs/types/enums/product.enum";
+import { ProductCollection, ProductSize, ProductStatus, ProductVolume } from "../libs/types/enums/product.enum";
 import { ObjectId } from "mongoose";
 import ViewService from "./View.service";
 import { ViewInput } from "../libs/types/view";
@@ -24,25 +24,41 @@ class ProductService {
 
   public async getProducts(inquiry: ProductInquiry): Promise<Product[]> {
     const match: any = { productStatus: ProductStatus.PROCESS };
+    const allowedSortFields = new Set([
+      "createdAt",
+      "updatedAt",
+      "productPrice",
+      "productViews",
+      "productName",
+    ]);
+    const orderField = allowedSortFields.has(inquiry.order)
+      ? inquiry.order
+      : "createdAt";
+    const page = Number.isInteger(inquiry.page) && inquiry.page > 0 ? inquiry.page : 1;
+    const limit =
+      Number.isInteger(inquiry.limit) && inquiry.limit > 0
+        ? Math.min(inquiry.limit, 100)
+        : 20;
 
     if (inquiry.productCollection) {
       match.productCollection = inquiry.productCollection;
     }
     if (inquiry.search) {
-      match.productName = { $regex: new RegExp(inquiry.search, "i") };
+      const escapedSearch = inquiry.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      match.productName = { $regex: new RegExp(escapedSearch, "i") };
     }
 
     const sort: any =
-      inquiry.order === "productPrice"
-        ? { [inquiry.order]: 1 }
-        : { [inquiry.order]: -1 };
+      orderField === "productPrice" || orderField === "productName"
+        ? { [orderField]: 1 }
+        : { [orderField]: -1 };
 
     const result = await this.productModel
       .aggregate([
         { $match: match },
         { $sort: sort },
-        { $skip: (inquiry.page - 1) * inquiry.limit },
-        { $limit: inquiry.limit },
+        { $skip: (page - 1) * limit },
+        { $limit: limit },
       ])
       .exec();
 
@@ -98,6 +114,29 @@ class ProductService {
   }
 
   public async createNewProduct(input: ProductInput): Promise<Product> {
+    if (
+      !Object.values(ProductCollection).includes(input.productCollection) ||
+      !input.productName ||
+      Number(input.productPrice) <= 0 ||
+      Number(input.productLeftCount) < 0 ||
+      !input.productDesc
+    ) {
+      throw new Errors(HttpCode.BAD_REQUEST, Message.CREATE_FAILED);
+    }
+
+    input.productPrice = Number(input.productPrice);
+    input.productLeftCount = Number(input.productLeftCount);
+    if (input.productSize && !Object.values(ProductSize).includes(input.productSize)) {
+      throw new Errors(HttpCode.BAD_REQUEST, Message.CREATE_FAILED);
+    }
+    if (
+      input.productVolume &&
+      !Object.values(ProductVolume).includes(Number(input.productVolume))
+    ) {
+      throw new Errors(HttpCode.BAD_REQUEST, Message.CREATE_FAILED);
+    }
+    if (input.productVolume) input.productVolume = Number(input.productVolume);
+
     try {
       return await this.productModel.create(input);
     } catch (err) {
@@ -110,9 +149,19 @@ class ProductService {
     id: string,
     input: ProductUpdateInput
   ): Promise<Product> {
+    if (
+      input.productStatus &&
+      !Object.values(ProductStatus).includes(input.productStatus)
+    ) {
+      throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
+    }
     id = shapeIntoMongooseObjectId(id);
     const result = await this.productModel
-      .findOneAndUpdate({ _id: id }, input, { new: true })
+      .findOneAndUpdate(
+        { _id: id },
+        { productStatus: input.productStatus },
+        { new: true }
+      )
       .exec();
     if (!result) throw new Errors(HttpCode.NOT_MODIFIED, Message.UPDATE_FAILED);
     return result;
