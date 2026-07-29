@@ -62,7 +62,6 @@ class ProductService {
       ])
       .exec();
 
-    if (!result) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
     return result;
   }
 
@@ -98,19 +97,32 @@ class ProductService {
     return result;
   }
 
-  public async likeProduct(id: string): Promise<number> {
+  public async likeProduct(memberId: any, id: string): Promise<number> {
     const productId = shapeIntoMongooseObjectId(id);
+    const input: ViewInput = {
+      memberId: shapeIntoMongooseObjectId(memberId),
+      viewRefId: productId,
+      viewGroup: ViewGroup.LIKE,
+    };
+
+    // Har bir foydalanuvchi bitta mahsulotni faqat bir marta like qila oladi
+    const existLike = await this.viewService.checkViewExistence(input);
+    if (existLike) {
+      const product = await this.productModel.findById(productId).exec();
+      if (!product) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
+      return product.productLikes;
+    }
+
+    await this.viewService.insertMemberView(input);
     const result = await this.productModel
-      .findByIdAndUpdate(productId, { $inc: { productViews: 1 } }, { new: true })
+      .findByIdAndUpdate(productId, { $inc: { productLikes: 1 } }, { new: true })
       .exec();
     if (!result) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
-    return result.productViews;
+    return result.productLikes;
   }
 
   public async getAllProducts(): Promise<Product[]> {
-    const result = await this.productModel.find().exec();
-    if (!result) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
-    return result;
+    return await this.productModel.find().exec();
   }
 
   public async createNewProduct(input: ProductInput): Promise<Product> {
@@ -149,19 +161,67 @@ class ProductService {
     id: string,
     input: ProductUpdateInput
   ): Promise<Product> {
-    if (
-      input.productStatus &&
-      !Object.values(ProductStatus).includes(input.productStatus)
-    ) {
+    const updateData: Record<string, any> = {};
+
+    if (input.productStatus !== undefined) {
+      if (!Object.values(ProductStatus).includes(input.productStatus)) {
+        throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
+      }
+      updateData.productStatus = input.productStatus;
+    }
+    if (input.productCollection !== undefined) {
+      if (!Object.values(ProductCollection).includes(input.productCollection)) {
+        throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
+      }
+      updateData.productCollection = input.productCollection;
+    }
+    if (input.productName !== undefined) {
+      if (!input.productName) {
+        throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
+      }
+      updateData.productName = input.productName;
+    }
+    if (input.productPrice !== undefined) {
+      const price = Number(input.productPrice);
+      if (!(price > 0)) {
+        throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
+      }
+      updateData.productPrice = price;
+    }
+    if (input.productLeftCount !== undefined) {
+      const count = Number(input.productLeftCount);
+      if (!Number.isInteger(count) || count < 0) {
+        throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
+      }
+      updateData.productLeftCount = count;
+    }
+    if (input.productSize !== undefined) {
+      if (!Object.values(ProductSize).includes(input.productSize)) {
+        throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
+      }
+      updateData.productSize = input.productSize;
+    }
+    if (input.productVolume !== undefined) {
+      const volume = Number(input.productVolume);
+      if (!Object.values(ProductVolume).includes(volume)) {
+        throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
+      }
+      updateData.productVolume = volume;
+    }
+    if (input.productDesc !== undefined) {
+      if (!input.productDesc) {
+        throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
+      }
+      updateData.productDesc = input.productDesc;
+    }
+
+    if (Object.keys(updateData).length === 0) {
       throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
     }
-    id = shapeIntoMongooseObjectId(id);
+
+    const productId = shapeIntoMongooseObjectId(id);
     const result = await this.productModel
-      .findOneAndUpdate(
-        { _id: id },
-        { productStatus: input.productStatus },
-        { new: true }
-      )
+      .findOneAndUpdate({ _id: productId }, updateData, { new: true })
       .exec();
     if (!result) throw new Errors(HttpCode.NOT_MODIFIED, Message.UPDATE_FAILED);
     return result;

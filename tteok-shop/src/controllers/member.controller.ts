@@ -8,10 +8,22 @@ import {
   MemberInput,
   MemberUpdateInput,
 } from "../libs/types/member";
+import { removeUploadedFiles } from "../libs/types/utils/uploader";
 
 const memberService = new MemberService();
 const authService = new AuthService();
 const memberController: T = {};
+
+// Cross-origin deploys (frontend and backend on different domains) require
+// SameSite=None + Secure for the browser to send the cookie back at all;
+// on localhost (http, same-site) that combination would silently break login,
+// so it's only applied when NODE_ENV=production.
+const isProd = process.env.NODE_ENV === "production";
+const authCookieOptions = {
+  httpOnly: true,
+  secure: isProd,
+  sameSite: (isProd ? "none" : "lax") as "none" | "lax",
+};
 
 memberController.getShop = async (req: any, res: Response) => {
   try {
@@ -34,10 +46,11 @@ memberController.signup = async (req: any, res: Response) => {
     }
     const result = await memberService.Signup(input);
     const token = await authService.createToken(result);
-    res.cookie("accessToken", token, { httpOnly: true });
+    res.cookie("accessToken", token, authCookieOptions);
     res.status(HttpCode.CREATED).json(result);
   } catch (err) {
     console.log("Error, signup:", err);
+    removeUploadedFiles(req.file);
     if (err instanceof Errors) res.status(err.code).json(err);
     else res.status(Errors.standard.code).json(Errors.standard);
   }
@@ -49,7 +62,7 @@ memberController.login = async (req: any, res: Response) => {
     const input: LoginInput = req.body;
     const result = await memberService.login(input);
     const token = await authService.createToken(result);
-    res.cookie("accessToken", token, { httpOnly: true });
+    res.cookie("accessToken", token, authCookieOptions);
     res.status(HttpCode.OK).json(result);
   } catch (err) {
     console.log("Error, login:", err);
@@ -61,7 +74,7 @@ memberController.login = async (req: any, res: Response) => {
 memberController.logout = async (req: any, res: Response) => {
   try {
     console.log("logout");
-    res.clearCookie("accessToken");
+    res.clearCookie("accessToken", authCookieOptions);
     res.status(HttpCode.OK).json({ message: "Logged out!" });
   } catch (err) {
     console.log("Error, logout:", err);
@@ -93,6 +106,7 @@ memberController.updateMember = async (req: any, res: Response) => {
     res.status(HttpCode.OK).json(result);
   } catch (err) {
     console.log("Error, updateMember:", err);
+    removeUploadedFiles(req.file);
     if (err instanceof Errors) res.status(err.code).json(err);
     else res.status(Errors.standard.code).json(Errors.standard);
   }
@@ -114,7 +128,9 @@ memberController.verifyAuth = async (req: any, res: Response, next: any) => {
   try {
     const token = req.cookies["accessToken"];
     if (!token) throw new Errors(HttpCode.UNAUTHORIZED, Message.NOT_AUTHENTICATED);
-    req.member = await authService.checkAuth(token);
+    const payload = await authService.checkAuth(token);
+    // Token amal qilsa ham, a'zo bloklangan/o'chirilgan bo'lishi mumkin — DB dan tekshiramiz
+    req.member = await memberService.ensureActiveMember(payload._id);
     next();
   } catch (err) {
     console.log("Error, verifyAuth:", err);

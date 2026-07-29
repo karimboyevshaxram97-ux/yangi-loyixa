@@ -4,6 +4,7 @@ import { Inquiry, InquiryInput, InquiryReplyInput } from "../libs/types/inquiry"
 import { InquiryStatus } from "../libs/types/enums/inquiry.enum";
 import { shapeIntoMongooseObjectId } from "../libs/types/config";
 import Errors, { HttpCode, Message } from "../libs/types/errors";
+import { escapeHtml } from "../libs/types/utils/escape";
 
 class InquiryService {
   private readonly inquiryModel;
@@ -108,6 +109,11 @@ class InquiryService {
   ): Promise<void> {
     const transport = await this.getTransporter();
 
+    // Foydalanuvchi kiritgan matnlar email HTML iga qo'yilishidan oldin escape qilinadi
+    const safeName = escapeHtml(toName);
+    const safeMessage = escapeHtml(originalMessage);
+    const safeReply = escapeHtml(replyText);
+
     const fromAddress = process.env.SMTP_USER
       ? `"떡방 고객센터" <${process.env.SMTP_USER}>`
       : '"떡방 고객센터" <noreply@tteok-shop.com>';
@@ -123,15 +129,15 @@ class InquiryService {
             <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:1rem;">문의 답변 안내</p>
           </div>
           <div style="padding:32px;">
-            <p style="font-size:1rem;color:#2d3e57;">안녕하세요, <strong>${toName}</strong>님!</p>
+            <p style="font-size:1rem;color:#2d3e57;">안녕하세요, <strong>${safeName}</strong>님!</p>
             <p style="color:#4a6fa2;">고객님의 문의에 답변을 드립니다.</p>
             <div style="background:#f0f7ff;border-left:4px solid #8bcfff;border-radius:8px;padding:16px;margin:20px 0;">
               <p style="margin:0 0 6px;font-size:0.85rem;color:#7a9abf;font-weight:600;">📩 원래 문의 내용</p>
-              <p style="margin:0;color:#2d3e57;font-size:0.95rem;">${originalMessage}</p>
+              <p style="margin:0;color:#2d3e57;font-size:0.95rem;">${safeMessage}</p>
             </div>
             <div style="background:#fff;border:1px solid #d0e8ff;border-radius:12px;padding:20px;margin:20px 0;">
               <p style="margin:0 0 8px;font-size:0.85rem;color:#4f96de;font-weight:700;">✅ 답변</p>
-              <p style="margin:0;color:#1f3250;font-size:1rem;line-height:1.7;">${replyText}</p>
+              <p style="margin:0;color:#1f3250;font-size:1rem;line-height:1.7;">${safeReply}</p>
             </div>
             <p style="color:#7a9abf;font-size:0.9rem;margin-top:24px;">
               추가 문의 사항이 있으시면 언제든지 연락해 주세요.<br/>감사합니다. 🍡

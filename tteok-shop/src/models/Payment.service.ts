@@ -17,14 +17,20 @@ import { PaymentMethod, PaymentStatus } from "../libs/types/enums/payment.enum";
 import { OrderStatus } from "../libs/types/enums/order.enum";
 import { shapeIntoMongooseObjectId } from "../libs/types/config";
 import Errors, { HttpCode, Message } from "../libs/types/errors";
+import OrderService from "./Order.service";
+import MemberService from "./Member.service";
 
 class PaymentService {
   private readonly paymentModel;
   private readonly orderModel;
+  private readonly orderService;
+  private readonly memberService;
 
   constructor() {
     this.paymentModel = PaymentModel;
     this.orderModel = OrderModel;
+    this.orderService = new OrderService();
+    this.memberService = new MemberService();
   }
 
   private ensurePaymentIntegrationEnabled(): void {
@@ -54,6 +60,15 @@ class PaymentService {
     if (Number(input.amount) !== order.orderTotal) {
       throw new Errors(HttpCode.BAD_REQUEST, Message.PAYMENT_FAILED);
     }
+
+    // Shu buyurtma uchun eski tugallanmagan to'lovlarni bekor qilamiz —
+    // bitta buyurtmaga faqat bitta faol PENDING to'lov bo'lishi kerak
+    await this.paymentModel
+      .updateMany(
+        { orderId, paymentStatus: PaymentStatus.PENDING },
+        { paymentStatus: PaymentStatus.FAILED }
+      )
+      .exec();
 
     return { memberId, orderId, order };
   }
@@ -228,8 +243,12 @@ class PaymentService {
 
     if (existingPayment.paymentStatus === PaymentStatus.SUCCESS)
       throw new Errors(HttpCode.BAD_REQUEST, Message.PAYMENT_ALREADY_PROCESSED);
+    if (existingPayment.paymentStatus !== PaymentStatus.PENDING)
+      throw new Errors(HttpCode.BAD_REQUEST, Message.PAYMENT_FAILED);
 
     try {
+      let paidAt = new Date();
+
       if (existingPayment.paymentMethod === PaymentMethod.KAKAO) {
         if (!input.pgToken)
           throw new Errors(HttpCode.BAD_REQUEST, Message.PAYMENT_FAILED);
@@ -250,36 +269,88 @@ class PaymentService {
             },
           }
         );
+        paidAt = new Date(response.data.approved_at);
+      }
+      // SAMSUNG / APPLE / CREDIT_CARD: haqiqiy PG integratsiyasi qo'shilgunga
+      // qadar tasdiqlash so'rovi to'lovni muvaffaqiyatli deb qabul qiladi
 
-        const updatedPayment = await this.paymentModel
-          .findOneAndUpdate(
-            { transactionId: input.transactionId },
-            {
-              paymentStatus: PaymentStatus.SUCCESS,
-              paidAt: new Date(response.data.approved_at),
-            },
-            { new: true }
-          )
-          .exec();
+      // Atomik: faqat PENDING holatdagi to'lovni SUCCESS ga o'tkazamiz —
+      // parallel confirm so'rovlarida ikki marta yakunlanishning oldini oladi
+      const updatedPayment = await this.paymentModel
+        .findOneAndUpdate(
+          {
+            transactionId: input.transactionId,
+            paymentStatus: PaymentStatus.PENDING,
+          },
+          { paymentStatus: PaymentStatus.SUCCESS, paidAt },
+          { new: true }
+        )
+        .exec();
 
-        if (!updatedPayment)
-          throw new Errors(HttpCode.NOT_MODIFIED, Message.UPDATE_FAILED);
+      if (!updatedPayment)
+        throw new Errors(HttpCode.BAD_REQUEST, Message.PAYMENT_ALREADY_PROCESSED);
 
-        await this.orderModel
-          .findByIdAndUpdate(existingPayment.orderId, {
-            orderStatus: OrderStatus.PROCESS,
-          })
-          .exec();
+      const paidOrder = await this.orderModel
+        .findOneAndUpdate(
+          { _id: existingPayment.orderId, orderStatus: OrderStatus.PAUSE },
+          { orderStatus: OrderStatus.PROCESS },
+          { new: true }
+        )
+        .exec();
 
-        return updatedPayment as unknown as Payment;
+      // To'lov yakunlanganda foydalanuvchiga 1 ball beriladi
+      if (paidOrder) {
+        try {
+          await this.memberService.addUserPoint(member, 1);
+        } catch (pointErr) {
+          console.log("Warning, addUserPoint failed:", pointErr);
+        }
       }
 
-      throw new Errors(HttpCode.BAD_REQUEST, Message.INVALID_PAYMENT_METHOD);
+      return updatedPayment as unknown as Payment;
     } catch (err) {
       if (err instanceof Errors) throw err;
       console.log("Error, confirmPayment:", err);
       throw new Errors(HttpCode.BAD_REQUEST, Message.PAYMENT_FAILED);
     }
+  }
+
+  /** KakaoPay redirect callbacklari (approval_url/fail_url/cancel_url) **/
+  public async confirmKakaoRedirect(
+    member: Member,
+    paymentId: string,
+    pgToken: string
+  ): Promise<Payment> {
+    const memberId = shapeIntoMongooseObjectId(member._id);
+    const payment = await this.paymentModel
+      .findOne({ _id: shapeIntoMongooseObjectId(paymentId), memberId })
+      .exec();
+
+    if (!payment || !payment.transactionId)
+      throw new Errors(HttpCode.NOT_FOUND, Message.PAYMENT_NOT_FOUND);
+
+    return await this.confirmPayment(member, {
+      transactionId: payment.transactionId,
+      paymentMethod: PaymentMethod.KAKAO,
+      pgToken,
+    });
+  }
+
+  public async markKakaoPaymentFailed(
+    member: Member,
+    paymentId: string
+  ): Promise<void> {
+    const memberId = shapeIntoMongooseObjectId(member._id);
+    await this.paymentModel
+      .findOneAndUpdate(
+        {
+          _id: shapeIntoMongooseObjectId(paymentId),
+          memberId,
+          paymentStatus: PaymentStatus.PENDING,
+        },
+        { paymentStatus: PaymentStatus.FAILED }
+      )
+      .exec();
   }
 
   /** Refund Payment **/
@@ -294,6 +365,12 @@ class PaymentService {
       throw new Errors(HttpCode.NOT_FOUND, Message.PAYMENT_NOT_FOUND);
 
     if (existingPayment.paymentStatus !== PaymentStatus.SUCCESS)
+      throw new Errors(HttpCode.BAD_REQUEST, Message.REFUND_FAILED);
+
+    // Faqat hali yakunlanmagan (PROCESS) buyurtma uchun refund mumkin —
+    // yetkazib berilgan (FINISH) yoki bekor qilingan buyurtma qaytarilmaydi
+    const order = await this.orderModel.findById(existingPayment.orderId).exec();
+    if (!order || order.orderStatus !== OrderStatus.PROCESS)
       throw new Errors(HttpCode.BAD_REQUEST, Message.REFUND_FAILED);
 
     try {
@@ -316,9 +393,13 @@ class PaymentService {
       }
 
       // Samsung Pay, Apple Pay, Credit Card refund via respective PG APIs
+      // Atomik: faqat SUCCESS holatdagi to'lov REFUNDED ga o'tadi
       const updatedPayment = await this.paymentModel
         .findOneAndUpdate(
-          { transactionId: input.transactionId },
+          {
+            transactionId: input.transactionId,
+            paymentStatus: PaymentStatus.SUCCESS,
+          },
           { paymentStatus: PaymentStatus.REFUNDED },
           { new: true }
         )
@@ -327,11 +408,18 @@ class PaymentService {
       if (!updatedPayment)
         throw new Errors(HttpCode.NOT_MODIFIED, Message.REFUND_FAILED);
 
-      await this.orderModel
-        .findByIdAndUpdate(existingPayment.orderId, {
-          orderStatus: OrderStatus.DELETE,
-        })
+      const cancelledOrder = await this.orderModel
+        .findOneAndUpdate(
+          { _id: existingPayment.orderId, orderStatus: OrderStatus.PROCESS },
+          { orderStatus: OrderStatus.DELETE },
+          { new: true }
+        )
         .exec();
+
+      // Buyurtma bekor qilindi — mahsulot zaxirasini qaytaramiz
+      if (cancelledOrder) {
+        await this.orderService.restoreOrderStock(existingPayment.orderId);
+      }
 
       return updatedPayment as unknown as Payment;
     } catch (err) {

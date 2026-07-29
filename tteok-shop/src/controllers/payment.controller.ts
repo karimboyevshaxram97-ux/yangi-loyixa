@@ -9,6 +9,7 @@ import {
   PaymentRefundInput,
 } from "../libs/types/payment";
 import { PaymentMethod } from "../libs/types/enums/payment.enum";
+import { alertScript } from "../libs/types/utils/escape";
 
 const paymentService = new PaymentService();
 const paymentController: T = {};
@@ -85,6 +86,46 @@ paymentController.confirmPayment = async (req: any, res: Response) => {
     if (err instanceof Errors) res.status(err.code).json(err);
     else res.status(Errors.standard.code).json(Errors.standard);
   }
+};
+
+/** GET /payment/kakao/success — KakaoPay approval_url callback **/
+paymentController.kakaoPaySuccess = async (req: any, res: Response) => {
+  try {
+    console.log("kakaoPaySuccess");
+    const paymentId = String(req.query.paymentId ?? "");
+    const pgToken = String(req.query.pg_token ?? "");
+    await paymentService.confirmKakaoRedirect(req.member, paymentId, pgToken);
+    res.send(alertScript("결제가 완료되었습니다!", "/"));
+  } catch (err) {
+    console.log("Error, kakaoPaySuccess:", err);
+    const message =
+      err instanceof Errors ? err.message : "Payment processing failed!";
+    res.send(alertScript(message, "/"));
+  }
+};
+
+/** GET /payment/kakao/fail — KakaoPay fail_url callback **/
+paymentController.kakaoPayFail = async (req: any, res: Response) => {
+  try {
+    console.log("kakaoPayFail");
+    const paymentId = String(req.query.paymentId ?? "");
+    await paymentService.markKakaoPaymentFailed(req.member, paymentId);
+  } catch (err) {
+    console.log("Error, kakaoPayFail:", err);
+  }
+  res.send(alertScript("결제에 실패했습니다. 다시 시도해 주세요.", "/"));
+};
+
+/** GET /payment/kakao/cancel — KakaoPay cancel_url callback **/
+paymentController.kakaoPayCancel = async (req: any, res: Response) => {
+  try {
+    console.log("kakaoPayCancel");
+    const paymentId = String(req.query.paymentId ?? "");
+    await paymentService.markKakaoPaymentFailed(req.member, paymentId);
+  } catch (err) {
+    console.log("Error, kakaoPayCancel:", err);
+  }
+  res.send(alertScript("결제가 취소되었습니다.", "/"));
 };
 
 /** POST /payment/refund **/

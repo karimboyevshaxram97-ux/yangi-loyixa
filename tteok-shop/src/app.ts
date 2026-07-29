@@ -22,6 +22,13 @@ const store = new MongoDBStore(
 );
 
 const app = express();
+const isProd = process.env.NODE_ENV === "production";
+
+// Deploy platforms (Render/Railway/Heroku, etc.) terminate TLS at their own
+// proxy and forward plain HTTP to this process — without trusting that proxy,
+// Express can't tell the connection was actually HTTPS, which breaks `secure`
+// cookies (the admin session cookie below) in production.
+if (isProd) app.set("trust proxy", 1);
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static("./uploads"));
@@ -34,7 +41,7 @@ app.use(morgan(MORGAN_FORMAT));
 app.use(
   session({
     secret: String(process.env.SESSION_SECRET),
-    cookie: { maxAge: 1000 * 3600 * 3 },
+    cookie: { maxAge: 1000 * 3600 * 3, secure: isProd },
     store: store,
     resave: true,
     saveUninitialized: true,

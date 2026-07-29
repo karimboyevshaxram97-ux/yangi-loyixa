@@ -13,18 +13,15 @@ import Errors, { HttpCode, Message } from "../libs/types/errors";
 import { ObjectId } from "mongoose";
 import { OrderStatus } from "../libs/types/enums/order.enum";
 import { ProductStatus } from "../libs/types/enums/product.enum";
-import MemberService from "./Member.service";
 import mongoose from "mongoose";
 
 class OrderService {
   private readonly orderModel;
   private readonly orderItemModel;
-  private readonly memberService;
 
   constructor() {
     this.orderModel = OrderModel;
     this.orderItemModel = OrderItemModel;
-    this.memberService = new MemberService();
   }
 
   public async createOrder(
@@ -84,7 +81,8 @@ class OrderService {
     const amount = orderItems.reduce((accumulator: number, item: OrderItemInput) => {
       return accumulator + item.itemPrice * item.itemQuantity;
     }, 0);
-    const delivery = amount < 100 ? 5 : 0;
+    // KRW: 30,000 vondan yuqori buyurtmalarga yetkazib berish bepul, aks holda 3,000 von
+    const delivery = amount >= 30000 ? 0 : 3000;
     const session = await mongoose.startSession();
 
     try {
@@ -146,6 +144,18 @@ class OrderService {
     console.log("orderItemsState:", orderItemsState);
   }
 
+  public async restoreOrderStock(orderId: ObjectId | string): Promise<void> {
+    const id = shapeIntoMongooseObjectId(orderId);
+    const items = await this.orderItemModel.find({ orderId: id }).lean().exec();
+    await Promise.all(
+      items.map((item: any) =>
+        ProductModel.findByIdAndUpdate(item.productId, {
+          $inc: { productLeftCount: item.itemQuantity },
+        }).exec()
+      )
+    );
+  }
+
   public async getMyOrders(
     member: Member,
     inquiry: OrderInquiry
@@ -184,7 +194,6 @@ class OrderService {
       ])
       .exec();
 
-    if (!result) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
     return result;
   }
 
@@ -193,10 +202,26 @@ class OrderService {
       throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
     }
     const orderId = shapeIntoMongooseObjectId(id);
+    const order = await this.orderModel.findById(orderId).exec();
+    if (!order) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
+    if (order.orderStatus === orderStatus) return order;
+    // DELETE holatidagi buyurtmani qayta tiklash mumkin emas (zaxira allaqachon qaytarilgan)
+    if (order.orderStatus === OrderStatus.DELETE) {
+      throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
+    }
+
     const result = await this.orderModel
-      .findByIdAndUpdate(orderId, { orderStatus }, { new: true })
+      .findOneAndUpdate(
+        { _id: orderId, orderStatus: order.orderStatus },
+        { orderStatus },
+        { new: true }
+      )
       .exec();
     if (!result) throw new Errors(HttpCode.NOT_MODIFIED, Message.UPDATE_FAILED);
+
+    if (orderStatus === OrderStatus.DELETE) {
+      await this.restoreOrderStock(orderId);
+    }
     return result;
   }
 
@@ -210,6 +235,14 @@ class OrderService {
             localField: "_id",
             foreignField: "orderId",
             as: "orderItems",
+          },
+        },
+        {
+          $lookup: {
+            from: "products",
+            localField: "orderItems.productId",
+            foreignField: "_id",
+            as: "productData",
           },
         },
         {
@@ -233,24 +266,23 @@ class OrderService {
       orderId = shapeIntoMongooseObjectId(input.orderId),
       orderStatus = input.orderStatus;
 
-    if (![OrderStatus.DELETE].includes(orderStatus)) {
+    // Foydalanuvchi faqat hali to'lanmagan (PAUSE) buyurtmani bekor qila oladi;
+    // to'langan buyurtma faqat refund orqali bekor qilinadi
+    if (orderStatus !== OrderStatus.DELETE) {
       throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
     }
 
     const result = await this.orderModel
       .findOneAndUpdate(
-        { memberId: memberId, _id: orderId },
-        { orderStatus: orderStatus },
+        { memberId: memberId, _id: orderId, orderStatus: OrderStatus.PAUSE },
+        { orderStatus: OrderStatus.DELETE },
         { new: true }
       )
       .exec();
 
     if (!result) throw new Errors(HttpCode.NOT_MODIFIED, Message.UPDATE_FAILED);
 
-    if (orderStatus === OrderStatus.PROCESS) {
-      await this.memberService.addUserPoint(member, 1);
-    }
-
+    await this.restoreOrderStock(orderId);
     return result;
   }
 }

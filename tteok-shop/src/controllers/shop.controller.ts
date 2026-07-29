@@ -5,7 +5,8 @@ import MemberService from "../models/Member.service";
 import OrderService from "../models/Order.service";
 import { LoginInput, MemberInput, MemberUpdateInput } from "../libs/types/member";
 import { AdminRequest } from "../libs/types/member";
-import makeUploader from "../libs/types/utils/uploader";
+import makeUploader, { removeUploadedFiles } from "../libs/types/utils/uploader";
+import { alertScript } from "../libs/types/utils/escape";
 
 const memberService = new MemberService();
 const orderService = new OrderService();
@@ -88,9 +89,7 @@ shopController.processLogin = async (req: Request, res: Response) => {
     session.save((err: any) => {
       if (err) {
         console.log("Error saving session:", err);
-        res.send(
-          `<script>alert("Session error"); window.location.replace("/admin/login")</script>`
-        );
+        res.send(alertScript("Session error", "/admin/login"));
       } else {
         res.redirect("/admin/");
       }
@@ -99,9 +98,7 @@ shopController.processLogin = async (req: Request, res: Response) => {
     console.log("Error, processLogin:", err);
     const message =
       err instanceof Errors ? err.message : Message.SOMETHING_WENT_WRONG;
-    res.send(
-      `<script>alert("${message}"); window.location.replace("/admin/login")</script>`
-    );
+    res.send(alertScript(message, "/admin/login"));
   }
 };
 
@@ -141,16 +138,13 @@ shopController.processSignup = async (req: AdminRequest, res: Response) => {
     input.memberImage = file.path.replace(/\\/g, "/");
 
     await memberService.processSignup(input);
-    res.send(
-      `<script>alert("Signup successful! Please login."); window.location.replace("/admin/login");</script>`
-    );
+    res.send(alertScript("Signup successful! Please login.", "/admin/login"));
   } catch (err) {
     console.log("Error, processSignup:", err);
+    removeUploadedFiles(req.file);
     const message =
       err instanceof Errors ? err.message : Message.SOMETHING_WENT_WRONG;
-    res.send(
-      `<script>alert("${message}"); window.location.replace("/admin/signup")</script>`
-    );
+    res.send(alertScript(message, "/admin/signup"));
   }
 };
 
@@ -194,6 +188,7 @@ shopController.checkAuthSession = async (req: Request, res: Response) => {
     }
   } catch (err) {
     console.log("Error, checkAuthSession:", err);
+    res.status(Errors.standard.code).json(Errors.standard);
   }
 };
 
@@ -211,7 +206,15 @@ shopController.verifyShop = async (
     next();
   } catch (err) {
     console.log("Error, verifyShop:", err);
-    res.redirect("/admin/login");
+    // Sahifa so'rovlari login sahifasiga yo'naltiriladi, JSON kutadigan
+    // fetch/axios so'rovlari esa 403 JSON oladi
+    if (req.method === "GET") {
+      res.redirect("/admin/login");
+    } else {
+      res
+        .status(HttpCode.FORBIDDEN)
+        .json({ code: HttpCode.FORBIDDEN, message: Message.NOT_AUTHENTICATED });
+    }
   }
 };
 
@@ -222,6 +225,7 @@ shopController.getUsers = async (req: Request, res: Response) => {
     res.render("users", { users: result });
   } catch (err) {
     console.log("Error, getUsers:", err);
+    res.render("users", { users: [] });
   }
 };
 

@@ -352,7 +352,7 @@
           const collection = escapeHTML(p.productCollection);
           const price = Number(p.productPrice) || 0;
           const leftCount = Number(p.productLeftCount) || 0;
-          const views = Number(p.productViews) || 0;
+          const likes = Number(p.productLikes) || 0;
           const imagePath = safeUploadPath(p.productImages && p.productImages[0]);
           const isSoldOut = leftCount <= 0;
 
@@ -371,7 +371,7 @@
                 </div>
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
                   <button class="like-product-btn" data-id="${id}" style="display:flex;align-items:center;gap:5px;background:none;border:1.5px solid #ffd0d0;border-radius:999px;padding:5px 14px;cursor:pointer;font-size:.85rem;color:#e57373;font-weight:600;transition:all .2s;" onmouseover="this.style.background='#fff0f0'" onmouseout="this.style.background='none'">
-                    ❤️ <span id="likes-${id}">${views}</span>
+                    ❤️ <span id="likes-${id}">${likes}</span>
                   </button>
                 </div>
                 <button class="add-cart-btn" data-id="${id}" data-name="${nameAttr}" data-price="${price}" ${isSoldOut ? 'disabled' : ''}
@@ -442,9 +442,13 @@
       btn.disabled = true;
       try {
         const res = await axios.post('/product/like/' + productId);
-        countEl.textContent = res.data.productViews;
+        countEl.textContent = res.data.productLikes;
         btn.style.background = '#fff0f0';
         btn.style.borderColor = '#e57373';
+      } catch (err) {
+        if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+          alert('좋아요를 누르려면 먼저 로그인이 필요합니다.');
+        }
       } finally {
         btn.disabled = false;
       }

@@ -5,6 +5,8 @@ import ProductService from "../models/Product.service";
 import { ProductInput, ProductInquiry } from "../libs/types/product";
 import { AdminRequest, ExtendedRequest } from "../libs/types/member";
 import { ProductCollection } from "../libs/types/enums/product.enum";
+import { alertScript } from "../libs/types/utils/escape";
+import { removeUploadedFiles } from "../libs/types/utils/uploader";
 
 const productService = new ProductService();
 const productController: T = {};
@@ -50,8 +52,8 @@ productController.likeProduct = async (req: any, res: Response) => {
   try {
     console.log("likeProduct");
     const { id } = req.params;
-    const productViews = await productService.likeProduct(id);
-    res.status(HttpCode.OK).json({ productViews });
+    const productLikes = await productService.likeProduct(req.member._id, id);
+    res.status(HttpCode.OK).json({ productLikes });
   } catch (err) {
     console.log("Error, likeProduct:", err);
     if (err instanceof Errors) res.status(err.code).json(err);
@@ -83,16 +85,13 @@ productController.createNewProduct = async (req: any, res: Response) => {
     });
 
     await productService.createNewProduct(data);
-    res.send(
-      `<script>alert("Successful creation!"); window.location.replace("/admin/product/all")</script>`
-    );
+    res.send(alertScript("Successful creation!", "/admin/product/all"));
   } catch (err) {
     console.log("Error, createNewProduct:", err);
+    removeUploadedFiles(...((req.files as any[]) ?? []));
     const message =
       err instanceof Errors ? err.message : Message.SOMETHING_WENT_WRONG;
-    res.send(
-      `<script>alert("${message}"); window.location.replace("/admin/product/all")</script>`
-    );
+    res.send(alertScript(message, "/admin/product/all"));
   }
 };
 

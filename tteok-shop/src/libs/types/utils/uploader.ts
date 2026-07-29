@@ -1,6 +1,19 @@
 import path from "path";
+import fs from "fs";
 import multer from "multer";
 import { v4 } from "uuid";
+
+/** Xatolik yuz berganda yuklangan fayllar "yetim" bo'lib qolmasligi uchun o'chiradi */
+export const removeUploadedFiles = (
+  ...files: Array<Express.Multer.File | undefined>
+): void => {
+  files.forEach((file) => {
+    if (!file?.path) return;
+    fs.unlink(file.path, (err) => {
+      if (err) console.log("Warning: could not remove uploaded file:", err.message);
+    });
+  });
+};
 
 function getTargetImageStorage(address: string) {
   return multer.diskStorage({

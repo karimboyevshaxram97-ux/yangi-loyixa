@@ -33,7 +33,7 @@ router.get("/member/top-users", memberController.getTopUsers);
 
 /** Product **/
 router.get("/product/all", productController.getProducts);
-router.post("/product/like/:id", productController.likeProduct);
+router.post("/product/like/:id", memberController.verifyAuth, productController.likeProduct);
 router.get("/product/:id", memberController.retrieveAuth, productController.getProduct);
 
 /** Order **/
@@ -51,5 +51,10 @@ router.post("/payment/apple/ready", memberController.verifyAuth, paymentControll
 router.post("/payment/credit/ready", memberController.verifyAuth, paymentController.initiateCreditCard);
 router.post("/payment/confirm", memberController.verifyAuth, paymentController.confirmPayment);
 router.post("/payment/refund", memberController.verifyAuth, paymentController.refundPayment);
+
+/** KakaoPay redirect callbacklari (brauzer orqali GET bilan keladi) **/
+router.get("/payment/kakao/success", memberController.verifyAuth, paymentController.kakaoPaySuccess);
+router.get("/payment/kakao/fail", memberController.verifyAuth, paymentController.kakaoPayFail);
+router.get("/payment/kakao/cancel", memberController.verifyAuth, paymentController.kakaoPayCancel);
 
 export default router;

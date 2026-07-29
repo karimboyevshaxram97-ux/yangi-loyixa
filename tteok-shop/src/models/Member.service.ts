@@ -58,6 +58,9 @@ class MemberService {
       .exec();
     if (!member) throw new Errors(HttpCode.NOT_FOUND, Message.NO_MEMBER_NICK);
 
+    if (member.memberStatus === MemberStatus.BLOCK)
+      throw new Errors(HttpCode.FORBIDDEN, Message.BLOCKED_USER);
+
     const isMatch = await bcrypt.compare(
       input.memberPassword,
       member.memberPassword
@@ -66,6 +69,18 @@ class MemberService {
       throw new Errors(HttpCode.UNAUTHORIZED, Message.WRONG_PASSWORD);
 
     return await this.memberModel.findById(member._id).lean().exec();
+  }
+
+  /** JWT payloadidagi a'zo hali ham mavjud va ACTIVE ekanini DB dan tekshiradi */
+  public async ensureActiveMember(memberId: any): Promise<Member> {
+    const id = shapeIntoMongooseObjectId(String(memberId));
+    const member: any = await this.memberModel.findById(id).lean().exec();
+    if (!member)
+      throw new Errors(HttpCode.UNAUTHORIZED, Message.NOT_AUTHENTICATED);
+    if (member.memberStatus !== MemberStatus.ACTIVE)
+      throw new Errors(HttpCode.FORBIDDEN, Message.BLOCKED_USER);
+    member._id = member._id.toString();
+    return member as Member;
   }
 
   public async getMemberDetail(member: Member): Promise<Member> {
@@ -113,7 +128,6 @@ class MemberService {
       .sort({ memberPoints: -1 })
       .limit(4)
       .exec();
-    if (!result) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
     return result;
   }
 
