@@ -156,18 +156,31 @@ class OrderService {
     );
   }
 
+  private buildMyOrdersMatch(member: Member, inquiry: OrderInquiry): any {
+    const matches: any = { memberId: shapeIntoMongooseObjectId(member._id) };
+    if (inquiry.orderStatus) matches.orderStatus = inquiry.orderStatus;
+    return matches;
+  }
+
+  public async countMyOrders(
+    member: Member,
+    inquiry: OrderInquiry
+  ): Promise<number> {
+    return await this.orderModel
+      .countDocuments(this.buildMyOrdersMatch(member, inquiry))
+      .exec();
+  }
+
   public async getMyOrders(
     member: Member,
     inquiry: OrderInquiry
   ): Promise<Order[]> {
-    const memberId = shapeIntoMongooseObjectId(member._id);
     const page = Number.isInteger(inquiry.page) && inquiry.page > 0 ? inquiry.page : 1;
     const limit =
       Number.isInteger(inquiry.limit) && inquiry.limit > 0
         ? Math.min(inquiry.limit, 100)
         : 20;
-    const matches: any = { memberId: memberId };
-    if (inquiry.orderStatus) matches.orderStatus = inquiry.orderStatus;
+    const matches = this.buildMyOrdersMatch(member, inquiry);
 
     const result = await this.orderModel
       .aggregate([

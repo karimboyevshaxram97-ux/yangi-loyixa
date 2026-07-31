@@ -22,8 +22,27 @@ class ProductService {
     this.viewService = new ViewService();
   }
 
-  public async getProducts(inquiry: ProductInquiry): Promise<Product[]> {
+  /** Ro'yxat va count bir xil filtr bilan ishlashi uchun markazlashtirilgan */
+  private buildProductMatch(inquiry: ProductInquiry): any {
     const match: any = { productStatus: ProductStatus.PROCESS };
+    if (inquiry.productCollection) {
+      match.productCollection = inquiry.productCollection;
+    }
+    if (inquiry.search) {
+      const escapedSearch = inquiry.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      match.productName = { $regex: new RegExp(escapedSearch, "i") };
+    }
+    return match;
+  }
+
+  public async countProducts(inquiry: ProductInquiry): Promise<number> {
+    return await this.productModel
+      .countDocuments(this.buildProductMatch(inquiry))
+      .exec();
+  }
+
+  public async getProducts(inquiry: ProductInquiry): Promise<Product[]> {
+    const match = this.buildProductMatch(inquiry);
     const allowedSortFields = new Set([
       "createdAt",
       "updatedAt",
@@ -39,14 +58,6 @@ class ProductService {
       Number.isInteger(inquiry.limit) && inquiry.limit > 0
         ? Math.min(inquiry.limit, 100)
         : 20;
-
-    if (inquiry.productCollection) {
-      match.productCollection = inquiry.productCollection;
-    }
-    if (inquiry.search) {
-      const escapedSearch = inquiry.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      match.productName = { $regex: new RegExp(escapedSearch, "i") };
-    }
 
     const sort: any =
       orderField === "productPrice" || orderField === "productName"

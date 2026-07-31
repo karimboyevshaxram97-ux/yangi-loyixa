@@ -355,3 +355,161 @@ textarea {
     min-width: 100%;
   }
 }
+
+/* ============================================================
+   ADMIN PANEL — MOBILE RESPONSIVE
+   Barcha admin sahifalar (products/orders/users/inquiries)
+   shu bitta qatlam orqali mobil ekranlarga moslashadi.
+   ============================================================ */
+
+/* Jadvallar: mobil ekranda gorizontal scroll (ustunlar siqilib
+   o'qib bo'lmas holga kelmasligi uchun) */
+.card-body {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.card-body > .table {
+  min-width: 640px;
+}
+
+/* Planshet va telefon */
+@media (max-width: 992px) {
+  .card-body {
+    padding: 18px;
+  }
+
+  .card-header {
+    padding: 16px 18px;
+    font-size: 1.05rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* ── Navbar: brend alohida qatorda, tugmalar o'ralib joylashadi ── */
+  .container.mt-4 {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .navbar {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 14px;
+    border-radius: 18px;
+  }
+
+  .navbar-brand {
+    width: 100%;
+    text-align: center;
+    font-size: 22px;
+    margin-right: 0;
+    margin-bottom: 2px;
+  }
+
+  .navbar > div {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .navbar .btn-sm {
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    margin-right: 0 !important;
+  }
+
+  /* ── Jadval: ixcham kataklar, matn bir qatorda (scroll bor) ── */
+  .table th,
+  .table td {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.6rem;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  /* Murojaat matni ustuni scroll ichida ham o'qilishi uchun */
+  .table td .inq-message {
+    white-space: normal;
+    min-width: 220px;
+    max-width: 300px;
+  }
+
+  .card {
+    border-radius: 20px;
+  }
+
+  .card-header {
+    border-radius: 20px 20px 0 0;
+  }
+
+  /* iOS: input fonti 16px dan kichik bo'lsa focus paytida
+     brauzer avtomatik zoom qiladi — shuni oldini olamiz */
+  .form-control,
+  select.form-control,
+  textarea.form-control {
+    font-size: 16px;
+  }
+
+  /* Modal (yangi mahsulot / javob yozish) ixcham padding */
+  .modal-body {
+    padding: 16px;
+  }
+
+  .modal-footer {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .inq-modal-body {
+    padding: 16px !important;
+  }
+
+  .inq-modal-footer {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .product-image-preview {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .product-image-wrapper {
+    margin-bottom: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Toast telefon ekranida chetdan-chetgacha */
+  #appToast {
+    left: 12px !important;
+    right: 12px !important;
+    min-width: 0 !important;
+  }
+
+  .card-header h5 {
+    font-size: 1rem;
+  }
+
+  .card-body {
+    padding: 12px;
+  }
+}
+
+/* Sensorli qurilmalarda hover-ko'tarilish effekti "yopishib"
+   qolmasligi uchun o'chiriladi */
+@media (hover: none) {
+  .card:hover {
+    transform: none;
+    box-shadow: 0 24px 60px rgba(113, 148, 202, 0.12);
+  }
+
+  .btn-primary:hover,
+  .btn-success:hover,
+  .btn-danger:hover {
+    transform: none;
+  }
+}

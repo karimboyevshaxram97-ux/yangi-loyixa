@@ -74,41 +74,37 @@
 
   <% if (locals.member && stats) { %>
   <!-- STATS SECTION -->
-  <section style="background:#f4f9fd;padding:56px 24px 64px;">
-    <div style="max-width:960px;margin:0 auto;">
-      <h2 style="text-align:center;color:#1f3250;font-size:1.6rem;font-weight:800;margin-bottom:36px;">📊 현황 한눈에 보기</h2>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:20px;">
+  <section class="home-stats-section">
+    <div class="home-stats-inner">
+      <h2 class="home-stats-title">📊 현황 한눈에 보기</h2>
+      <div class="home-stats-grid">
 
-        <div style="background:#fff;border-radius:18px;padding:30px 20px 24px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,0.07);display:flex;flex-direction:column;">
-          <div style="font-size:2.6rem;margin-bottom:8px;">🍡</div>
-          <div style="font-size:2.2rem;font-weight:900;color:#4f96de;"><%= stats.products %></div>
-          <div style="color:#7a9abf;font-size:.9rem;margin-top:4px;margin-bottom:20px;flex:1;">판매 중인 제품</div>
-          <a href="/admin/product/all" style="display:block;padding:10px;border-radius:999px;background:linear-gradient(135deg,#4f96de,#8bcfff);color:#fff;font-weight:700;text-decoration:none;font-size:.9rem;">제품 관리</a>
+        <div class="home-stat-card">
+          <div class="home-stat-icon">🍡</div>
+          <div class="home-stat-value"><%= stats.products %></div>
+          <div class="home-stat-label">판매 중인 제품</div>
+          <a href="/admin/product/all" class="home-stat-btn">제품 관리</a>
         </div>
 
-        <div style="background:#fff;border-radius:18px;padding:30px 20px 24px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,0.07);display:flex;flex-direction:column;">
-          <div style="font-size:2.6rem;margin-bottom:8px;">📦</div>
-          <div style="font-size:2.2rem;font-weight:900;color:#4f96de;"><%= stats.orders %></div>
-          <div style="color:#7a9abf;font-size:.9rem;margin-top:4px;margin-bottom:20px;flex:1;">총 주문 수</div>
-          <a href="/admin/order/all" style="display:block;padding:10px;border-radius:999px;background:linear-gradient(135deg,#4f96de,#8bcfff);color:#fff;font-weight:700;text-decoration:none;font-size:.9rem;">주문 관리</a>
+        <div class="home-stat-card">
+          <div class="home-stat-icon">📦</div>
+          <div class="home-stat-value"><%= stats.orders %></div>
+          <div class="home-stat-label">총 주문 수</div>
+          <a href="/admin/order/all" class="home-stat-btn">주문 관리</a>
         </div>
 
-        <div style="background:#fff;border-radius:18px;padding:30px 20px 24px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,0.07);display:flex;flex-direction:column;">
-          <div style="font-size:2.6rem;margin-bottom:8px;">👥</div>
-          <div style="font-size:2.2rem;font-weight:900;color:#4f96de;"><%= stats.members %></div>
-          <div style="color:#7a9abf;font-size:.9rem;margin-top:4px;margin-bottom:20px;flex:1;">가입 회원</div>
-          <a href="/admin/user/all" style="display:block;padding:10px;border-radius:999px;background:linear-gradient(135deg,#4f96de,#8bcfff);color:#fff;font-weight:700;text-decoration:none;font-size:.9rem;">사용자 관리</a>
+        <div class="home-stat-card">
+          <div class="home-stat-icon">👥</div>
+          <div class="home-stat-value"><%= stats.members %></div>
+          <div class="home-stat-label">가입 회원</div>
+          <a href="/admin/user/all" class="home-stat-btn">사용자 관리</a>
         </div>
 
-        <div style="background:#fff;border-radius:18px;padding:30px 20px 24px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,0.07);display:flex;flex-direction:column;">
-          <div style="font-size:2.6rem;margin-bottom:8px;">📩</div>
-          <% if (stats.pendingInquiries > 0) { %>
-          <div style="font-size:2.2rem;font-weight:900;color:#e55353;"><%= stats.pendingInquiries %></div>
-          <% } else { %>
-          <div style="font-size:2.2rem;font-weight:900;color:#4f96de;"><%= stats.pendingInquiries %></div>
-          <% } %>
-          <div style="color:#7a9abf;font-size:.9rem;margin-top:4px;margin-bottom:20px;flex:1;">미답변 문의</div>
-          <a href="/admin/inquiry/all" style="display:block;padding:10px;border-radius:999px;background:linear-gradient(135deg,#4f96de,#8bcfff);color:#fff;font-weight:700;text-decoration:none;font-size:.9rem;">문의 관리<% if (stats.pendingInquiries > 0) { %> (<%= stats.pendingInquiries %>)<% } %></a>
+        <div class="home-stat-card">
+          <div class="home-stat-icon">📩</div>
+          <div class="home-stat-value <%= stats.pendingInquiries > 0 ? 'is-alert' : '' %>"><%= stats.pendingInquiries %></div>
+          <div class="home-stat-label">미답변 문의</div>
+          <a href="/admin/inquiry/all" class="home-stat-btn">문의 관리<% if (stats.pendingInquiries > 0) { %> (<%= stats.pendingInquiries %>)<% } %></a>
         </div>
 
       </div>
@@ -325,6 +321,134 @@
       box-shadow: 0 16px 40px rgba(84, 142, 218, 0.55);
       color: #1f3250;
       text-decoration: none;
+    }
+
+    /* ── STATS SECTION ── */
+    .home-stats-section {
+      background: #f4f9fd;
+      padding: 56px 24px 64px;
+    }
+
+    .home-stats-inner {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .home-stats-title {
+      text-align: center;
+      color: #1f3250;
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin: 0 0 36px;
+    }
+
+    .home-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 20px;
+    }
+
+    .home-stat-card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 30px 20px 24px;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .home-stat-icon {
+      font-size: 2.6rem;
+      margin-bottom: 8px;
+    }
+
+    .home-stat-value {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: #4f96de;
+    }
+
+    .home-stat-value.is-alert {
+      color: #e55353;
+    }
+
+    .home-stat-label {
+      color: #7a9abf;
+      font-size: .9rem;
+      margin: 4px 0 20px;
+      flex: 1;
+    }
+
+    .home-stat-btn {
+      display: block;
+      padding: 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #4f96de, #8bcfff);
+      color: #fff;
+      font-weight: 700;
+      text-decoration: none;
+      font-size: .9rem;
+      transition: opacity .2s, transform .2s;
+    }
+
+    .home-stat-btn:hover {
+      color: #fff;
+      text-decoration: none;
+      opacity: .88;
+      transform: translateY(-1px);
+    }
+
+    /* ── STATS: MOBIL USLUB — 2x2 yonma-yon ixcham kartalar ── */
+    @media (max-width: 768px) {
+      .home-stats-section {
+        padding: 34px 14px 44px;
+      }
+
+      .home-stats-title {
+        font-size: 1.25rem;
+        margin-bottom: 18px;
+      }
+
+      .home-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .home-stat-card {
+        padding: 16px 10px 12px;
+        border-radius: 16px;
+        border: 1px solid #e0ecff;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      }
+
+      .home-stat-icon {
+        font-size: 1.6rem;
+        margin-bottom: 4px;
+        width: 46px;
+        height: 46px;
+        margin-left: auto;
+        margin-right: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #eaf4ff, #f6fbff);
+      }
+
+      .home-stat-value {
+        font-size: 1.55rem;
+      }
+
+      .home-stat-label {
+        font-size: .74rem;
+        margin: 2px 0 12px;
+      }
+
+      .home-stat-btn {
+        padding: 8px 6px;
+        font-size: .78rem;
+      }
     }
 
     /* ── RESPONSIVE ── */

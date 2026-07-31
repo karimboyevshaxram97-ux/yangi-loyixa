@@ -6,6 +6,7 @@ export enum HttpCode {
   UNAUTHORIZED = 401,
   FORBIDDEN = 403,
   NOT_FOUND = 404,
+  TOO_MANY_REQUESTS = 429,
   INTERNAL_SERVER_ERROR = 500,
 }
 
@@ -28,6 +29,10 @@ export enum Message {
   REFUND_FAILED = "Refund processing failed!",
   INVALID_PAYMENT_METHOD = "Invalid payment method!",
   KAKAO_PAY_ERROR = "KakaoPay API error occurred!",
+  VALIDATION_FAILED = "Validation failed: required fields are missing or invalid!",
+  TOKEN_EXPIRED = "Access token has expired, please refresh!",
+  INVALID_REFRESH_TOKEN = "Invalid or expired refresh token, please login again!",
+  TOO_MANY_REQUESTS = "Too many requests, please try again later!",
 }
 
 class Errors extends Error {

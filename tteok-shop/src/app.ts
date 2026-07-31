@@ -3,6 +3,7 @@ import express from "express";
 import path from "path";
 import router from "./router";
 import routerAdmin from "./router-admin";
+import routerMobile from "./router-mobile";
 import morgan from "morgan";
 import { MORGAN_FORMAT } from "./libs/types/common";
 import cookieParser from "cookie-parser";
@@ -38,25 +39,38 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(cookieParser());
 app.use(morgan(MORGAN_FORMAT));
 
-app.use(
-  session({
-    secret: String(process.env.SESSION_SECRET),
-    cookie: { maxAge: 1000 * 3600 * 3, secure: isProd },
-    store: store,
-    resave: true,
-    saveUninitialized: true,
-  })
-);
+const sessionMiddleware = session({
+  secret: String(process.env.SESSION_SECRET),
+  cookie: { maxAge: 1000 * 3600 * 3, secure: isProd },
+  store: store,
+  resave: true,
+  saveUninitialized: true,
+});
+
+// Mobil API (Bearer token) stateless — /api so'rovlari uchun web-sessiya
+// yaratilmaydi (aks holda har bir API chaqiruv sessions kolleksiyasini to'ldiradi)
+app.use(function (req, res, next) {
+  if (req.path.startsWith("/api/")) return next();
+  return sessionMiddleware(req, res, next);
+});
 
 app.use(function (req, res, next) {
   const sessionInstance = req.session as T;
-  res.locals.member = sessionInstance.member;
+  res.locals.member = sessionInstance?.member;
   next();
 });
 
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
+app.use("/api/v1", routerMobile);
+// Noma'lum /api yo'llari HTML emas, JSON 404 olishi kerak (mobil mijoz parse qila olishi uchun)
+app.use("/api", (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: { status: 404, message: "API endpoint not found!" },
+  });
+});
 app.use("/admin", routerAdmin);
 app.use("/", router);
 
