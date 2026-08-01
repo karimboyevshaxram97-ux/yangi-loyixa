@@ -128,7 +128,17 @@ memberController.verifyAuth = async (req: any, res: Response, next: any) => {
   try {
     const token = req.cookies["accessToken"];
     if (!token) throw new Errors(HttpCode.UNAUTHORIZED, Message.NOT_AUTHENTICATED);
-    const payload = await authService.checkAuth(token);
+
+    let payload;
+    try {
+      payload = await authService.checkAuth(token);
+    } catch (jwtErr) {
+      // jwt.verify throws a raw jsonwebtoken error (expired/invalid signature/malformed),
+      // not an Errors instance — without this translation it falls through to the
+      // generic 500 below, which never matches the frontend's 401-on-logout interceptor
+      throw new Errors(HttpCode.UNAUTHORIZED, Message.NOT_AUTHENTICATED);
+    }
+
     // Token amal qilsa ham, a'zo bloklangan/o'chirilgan bo'lishi mumkin — DB dan tekshiramiz
     req.member = await memberService.ensureActiveMember(payload._id);
     next();

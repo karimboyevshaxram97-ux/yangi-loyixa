@@ -31,11 +31,19 @@ const isProd = process.env.NODE_ENV === "production";
 // cookies (the admin session cookie below) in production.
 if (isProd) app.set("trust proxy", 1);
 
+// In production, restrict credentialed cross-origin requests to the known
+// frontend domain(s) (comma-separated); reflecting any origin is only safe
+// for local development where the caller is always trusted.
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",").map((o) => o.trim()).filter(Boolean);
+const corsOrigin: cors.CorsOptions["origin"] = isProd && allowedOrigins?.length
+  ? allowedOrigins
+  : true;
+
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static("./uploads"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(cors({ credentials: true, origin: true }));
+app.use(cors({ credentials: true, origin: corsOrigin }));
 app.use(cookieParser());
 app.use(morgan(MORGAN_FORMAT));
 

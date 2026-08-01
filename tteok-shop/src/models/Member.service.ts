@@ -40,9 +40,12 @@ class MemberService {
       const result = await this.memberModel.create(input);
       result.memberPassword = "";
       return result.toJSON();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error, model:signup", err);
-      throw new Errors(HttpCode.BAD_REQUEST, Message.USED_NICK_PHONE);
+      if (err.code === 11000) {
+        throw new Errors(HttpCode.BAD_REQUEST, Message.USED_NICK_PHONE);
+      }
+      throw new Errors(HttpCode.BAD_REQUEST, Message.CREATE_FAILED);
     }
   }
 
