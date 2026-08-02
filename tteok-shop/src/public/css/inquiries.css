@@ -1,0 +1,88 @@
+/* ============================================================
+   INQUIRIES (inquiries.ejs) — admin murojaatlar sahifasi
+   stillari. Sahifadagi <style> blokidan ko'chirilgan.
+   ============================================================ */
+
+.inq-message {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.92rem;
+  color: #2d3e57;
+}
+
+.inq-reply-preview {
+  border-left: 3px solid #8bcfff;
+  padding-left: 8px;
+  font-size: 0.82rem;
+}
+
+/* Status badges */
+.inq-badge-pending  { background:#fff3cd; color:#856404; padding:4px 10px; border-radius:999px; font-size:.8rem; font-weight:700; }
+.inq-badge-replied  { background:#d1e7dd; color:#0a3622; padding:4px 10px; border-radius:999px; font-size:.8rem; font-weight:700; }
+.inq-badge-closed   { background:#f8d7da; color:#842029; padding:4px 10px; border-radius:999px; font-size:.8rem; font-weight:700; }
+
+/* "✅ 완료" belgisi */
+.inq-done {
+  font-size: .85rem;
+}
+
+/* Majburiy maydon yulduzchasi */
+.inq-required {
+  color: #e55;
+}
+
+/* Modal */
+.inq-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inq-modal {
+  background: #fff;
+  border-radius: 20px;
+  width: min(580px, 94vw);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+
+.inq-modal-header {
+  background: linear-gradient(135deg, #cce8ff, #eff6ff);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #1f3250;
+  font-weight: 700;
+}
+
+.inq-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #4a6fa2;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.inq-modal-body    { padding: 24px; }
+.inq-modal-footer  { padding: 16px 24px; background: #f5f9ff; display: flex; justify-content: flex-end; }
+.inq-label         { font-size:.85rem; font-weight:700; color:#4a6fa2; margin-bottom:4px; display:block; }
+.inq-meta          { margin:0; font-size:.95rem; color:#1f3250; }
+.inq-original-msg  {
+  margin: 0;
+  font-size: .9rem;
+  color: #4a6fa2;
+  background: #f0f7ff;
+  border-left: 4px solid #8bcfff;
+  border-radius: 6px;
+  padding: 10px 14px;
+  line-height: 1.6;
+}

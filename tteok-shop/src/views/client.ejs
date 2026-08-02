@@ -1,132 +1,127 @@
 <%- include('includes/header') %>
 
-<body style="margin:0;padding:0;font-family:'Segoe UI',sans-serif;background:#f4f9fd;">
+<body class="client-page">
 
   <!-- NAVBAR -->
-  <nav style="background:rgba(71,168,224,0.92);backdrop-filter:blur(12px);padding:18px 40px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.1);">
-    <span style="font-size:1.5rem;font-weight:800;color:#fff;">🍡 떡방</span>
-    <div style="display:flex;gap:10px;align-items:center;">
-      <a href="#products" style="padding:8px 18px;border-radius:999px;background:rgba(255,255,255,0.15);color:#fff;text-decoration:none;font-weight:600;">제품</a>
-      <a href="#inquiry"  style="padding:8px 18px;border-radius:999px;background:rgba(255,255,255,0.15);color:#fff;text-decoration:none;font-weight:600;">문의</a>
+  <nav class="client-nav">
+    <span class="client-brand">🍡 떡방</span>
+    <div class="client-nav-links">
+      <a href="#products" class="client-nav-link">제품</a>
+      <a href="#inquiry" class="client-nav-link">문의</a>
       <!-- 장바구니 버튼 -->
-      <button onclick="openCart()" style="position:relative;padding:8px 18px;border-radius:999px;background:rgba(255,255,255,0.25);color:#fff;border:none;font-weight:700;cursor:pointer;font-size:.95rem;">
-        🛒 <span id="cart-count" style="display:none;position:absolute;top:-6px;right:-6px;background:#e55;color:#fff;border-radius:50%;width:20px;height:20px;font-size:.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;">0</span>
+      <button onclick="openCart()" class="cart-btn">
+        🛒 <span id="cart-count">0</span>
       </button>
     </div>
   </nav>
 
   <!-- CART DRAWER -->
-  <div id="cart-overlay" onclick="closeCart()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;backdrop-filter:blur(2px);"></div>
-  <div id="cart-drawer" style="display:none;position:fixed;top:0;right:0;width:min(400px,100vw);height:100vh;background:#fff;z-index:501;box-shadow:-8px 0 40px rgba(0,0,0,0.15);display:flex;flex-direction:column;">
-    <div style="padding:24px;background:linear-gradient(135deg,#4f96de,#8bcfff);display:flex;align-items:center;justify-content:space-between;">
-      <h3 style="margin:0;color:#fff;font-size:1.2rem;">🛒 장바구니</h3>
-      <button onclick="closeCart()" style="background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer;line-height:1;">&times;</button>
+  <div id="cart-overlay" onclick="closeCart()"></div>
+  <div id="cart-drawer">
+    <div class="cart-drawer-header">
+      <h3>🛒 장바구니</h3>
+      <button onclick="closeCart()" class="cart-drawer-close">&times;</button>
     </div>
 
-    <div id="cart-items" style="flex:1;overflow-y:auto;padding:20px;">
-      <p id="cart-empty" style="text-align:center;color:#7a9abf;margin-top:40px;">장바구니가 비어 있습니다.</p>
+    <div id="cart-items">
+      <p id="cart-empty" class="cart-empty-msg">장바구니가 비어 있습니다.</p>
     </div>
 
-    <div style="padding:20px;border-top:1px solid #e0ecff;background:#f8fbff;">
-      <div style="display:flex;justify-content:space-between;font-size:1.1rem;font-weight:800;color:#1f3250;margin-bottom:16px;">
+    <div class="cart-footer">
+      <div class="cart-total-row">
         <span>합계</span>
         <span id="cart-total">₩0</span>
       </div>
-      <button onclick="checkout()" style="width:100%;padding:14px;border-radius:999px;background:linear-gradient(135deg,#4f96de,#8bcfff);border:none;color:#fff;font-size:1rem;font-weight:700;cursor:pointer;">주문하기</button>
-      <button onclick="clearCart()" style="width:100%;padding:10px;border-radius:999px;background:none;border:1.5px solid #d0e8ff;color:#7a9abf;font-size:.9rem;font-weight:600;cursor:pointer;margin-top:8px;">장바구니 비우기</button>
+      <button onclick="checkout()" class="btn-gradient">주문하기</button>
+      <button onclick="clearCart()" class="btn-ghost cart-clear-btn">장바구니 비우기</button>
     </div>
   </div>
 
   <!-- PAYMENT MODAL -->
-  <div id="payment-overlay" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
-    <div style="background:#fff;border-radius:20px;padding:36px 32px;box-shadow:0 24px 80px rgba(0,0,0,0.2);max-width:400px;width:90%;">
-      <h3 style="color:#1f3250;margin:0 0 6px;font-size:1.3rem;">💳 결제</h3>
-      <p style="color:#7a9abf;font-size:.9rem;margin:0 0 24px;">결제 수단을 선택해 주세요.</p>
+  <div id="payment-overlay" class="overlay-center">
+    <div class="pay-card">
+      <h3 class="pay-title">💳 결제</h3>
+      <p class="pay-sub">결제 수단을 선택해 주세요.</p>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;">
-        <label id="pm-card"   onclick="selectPM('CREDIT_CARD')"  style="display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:12px;border:2px solid #4f96de;background:#eef6ff;cursor:pointer;font-weight:700;color:#1f3250;">💳 카드</label>
-        <label id="pm-kakao"  onclick="selectPM('KAKAO')"         style="display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:12px;border:2px solid #e0ecff;cursor:pointer;font-weight:600;color:#555;">🟡 카카오페이</label>
-        <label id="pm-samsung" onclick="selectPM('SAMSUNG')"      style="display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:12px;border:2px solid #e0ecff;cursor:pointer;font-weight:600;color:#555;">🔵 삼성페이</label>
-        <label id="pm-apple"  onclick="selectPM('APPLE')"         style="display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:12px;border:2px solid #e0ecff;cursor:pointer;font-weight:600;color:#555;">🍎 애플페이</label>
+      <div class="pm-grid">
+        <label id="pm-card"    onclick="selectPM('CREDIT_CARD')" class="pm-option selected">💳 카드</label>
+        <label id="pm-kakao"   onclick="selectPM('KAKAO')"       class="pm-option">🟡 카카오페이</label>
+        <label id="pm-samsung" onclick="selectPM('SAMSUNG')"     class="pm-option">🔵 삼성페이</label>
+        <label id="pm-apple"   onclick="selectPM('APPLE')"       class="pm-option">🍎 애플페이</label>
       </div>
 
-      <div style="display:flex;justify-content:space-between;font-size:1.1rem;font-weight:800;color:#1f3250;margin-bottom:20px;padding:14px 18px;background:#f4f9fd;border-radius:12px;">
+      <div class="pay-summary-row">
         <span>결제 금액</span>
         <span id="pay-amount-label">₩0</span>
       </div>
 
-      <button id="pay-btn" onclick="completePayment()" style="width:100%;padding:14px;border-radius:999px;background:linear-gradient(135deg,#4f96de,#8bcfff);border:none;color:#fff;font-size:1rem;font-weight:700;cursor:pointer;margin-bottom:10px;">결제완료</button>
-      <button onclick="closePaymentModal()" style="width:100%;padding:10px;border-radius:999px;background:none;border:1.5px solid #d0e8ff;color:#7a9abf;font-size:.9rem;font-weight:600;cursor:pointer;">취소</button>
-      <p id="pay-error" style="display:none;color:#e55;text-align:center;margin-top:10px;font-size:.9rem;"></p>
+      <button id="pay-btn" onclick="completePayment()" class="btn-gradient pay-confirm-btn">결제완료</button>
+      <button onclick="closePaymentModal()" class="btn-ghost">취소</button>
+      <p id="pay-error" class="form-error"></p>
     </div>
   </div>
 
   <!-- CHECKOUT SUCCESS -->
-  <div id="checkout-success" style="display:none;position:fixed;inset:0;z-index:700;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
-    <div style="background:#fff;border-radius:20px;padding:48px 40px;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,0.2);max-width:380px;width:90%;">
-      <div style="font-size:3.5rem;margin-bottom:12px;">✅</div>
-      <h3 style="color:#1f3250;margin:0 0 8px;">결제가 완료되었습니다!</h3>
-      <p style="color:#7a9abf;margin:0 0 24px;">주문해 주셔서 감사합니다.<br/>빠르게 준비하겠습니다.</p>
-      <button onclick="document.getElementById('checkout-success').style.display='none'" style="padding:12px 32px;border-radius:999px;background:linear-gradient(135deg,#4f96de,#8bcfff);border:none;color:#fff;font-weight:700;cursor:pointer;font-size:1rem;">확인</button>
+  <div id="checkout-success" class="overlay-center">
+    <div class="success-card">
+      <div class="success-emoji">✅</div>
+      <h3>결제가 완료되었습니다!</h3>
+      <p>주문해 주셔서 감사합니다.<br/>빠르게 준비하겠습니다.</p>
+      <button onclick="document.getElementById('checkout-success').style.display='none'" class="success-btn">확인</button>
     </div>
   </div>
 
   <!-- HERO -->
-  <div id="hero" style="background:linear-gradient(135deg,#4f96de,#8bcfff);min-height:60vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:60px 24px;">
+  <div id="hero">
     <div>
-      <div style="font-size:5rem;margin-bottom:16px;">🍡</div>
-      <h1 style="color:#fff;font-size:clamp(2.5rem,6vw,5rem);font-weight:900;margin:0 0 16px;">떡방</h1>
-      <p style="color:rgba(255,255,255,0.9);font-size:1.2rem;margin:0 0 32px;">전통 한국 떡과 건강한 음료</p>
-      <a href="#products" style="padding:14px 36px;background:#fff;color:#1f3250;border-radius:999px;font-weight:700;font-size:1rem;text-decoration:none;box-shadow:0 8px 24px rgba(0,0,0,0.15);">제품 보기 →</a>
+      <div class="hero-emoji">🍡</div>
+      <h1>떡방</h1>
+      <p>전통 한국 떡과 건강한 음료</p>
+      <a href="#products" class="hero-cta">제품 보기 →</a>
     </div>
   </div>
 
   <!-- PRODUCTS -->
-  <section id="products" style="max-width:1100px;margin:60px auto;padding:0 24px;">
-    <h2 style="text-align:center;color:#1f3250;font-size:2rem;margin-bottom:40px;">🍡 제품 목록</h2>
-    <div id="product-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:24px;">
-      <p style="text-align:center;color:#7a9abf;grid-column:1/-1;">로딩 중...</p>
+  <section id="products">
+    <h2 class="section-title">🍡 제품 목록</h2>
+    <div id="product-list">
+      <p class="list-msg">로딩 중...</p>
     </div>
   </section>
 
   <!-- INQUIRY FORM -->
-  <section id="inquiry" style="max-width:640px;margin:60px auto 80px;padding:0 24px;">
-    <h2 style="text-align:center;color:#1f3250;font-size:2rem;margin-bottom:8px;">📩 문의하기</h2>
-    <p style="text-align:center;color:#7a9abf;margin-bottom:32px;">궁금하신 점을 남겨주세요. 이메일로 빠르게 답변드립니다.</p>
+  <section id="inquiry">
+    <h2 class="section-title">📩 문의하기</h2>
+    <p class="section-sub">궁금하신 점을 남겨주세요. 이메일로 빠르게 답변드립니다.</p>
 
-    <div id="inquiry-success" style="display:none;text-align:center;padding:40px;background:#fff;border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.08);">
-      <div style="font-size:3rem;margin-bottom:12px;">✅</div>
-      <h3 style="color:#1f3250;margin:0 0 8px;">문의가 접수되었습니다!</h3>
-      <p style="color:#7a9abf;margin:0 0 20px;">빠른 시일 내에 이메일로 답변 드리겠습니다.<br/>평균 답변 시간: 24시간 이내</p>
-      <button onclick="resetInquiry()" style="padding:10px 28px;border-radius:999px;border:2px solid #e0ecff;background:#fff;color:#4a8cff;font-weight:600;cursor:pointer;">새 문의 작성</button>
+    <div id="inquiry-success">
+      <div class="success-emoji">✅</div>
+      <h3>문의가 접수되었습니다!</h3>
+      <p>빠른 시일 내에 이메일로 답변 드리겠습니다.<br/>평균 답변 시간: 24시간 이내</p>
+      <button onclick="resetInquiry()" class="inquiry-reset-btn">새 문의 작성</button>
     </div>
 
-    <form id="inquiry-form" onsubmit="submitInquiry(event)" style="background:#fff;border-radius:20px;padding:36px;box-shadow:0 8px 32px rgba(0,0,0,0.08);">
-      <div style="margin-bottom:20px;">
-        <label style="display:block;font-weight:700;color:#4a6fa2;margin-bottom:6px;">이름 *</label>
-        <input id="inq-name" type="text" placeholder="홍길동" required
-          style="width:100%;padding:12px 16px;border-radius:12px;border:1.5px solid #d0e8ff;font-size:1rem;box-sizing:border-box;outline:none;" />
+    <form id="inquiry-form" onsubmit="submitInquiry(event)">
+      <div class="form-field">
+        <label class="form-label">이름 *</label>
+        <input id="inq-name" type="text" class="form-input" placeholder="홍길동" required />
       </div>
-      <div style="margin-bottom:20px;">
-        <label style="display:block;font-weight:700;color:#4a6fa2;margin-bottom:6px;">이메일 *</label>
-        <input id="inq-email" type="email" placeholder="example@email.com" required
-          style="width:100%;padding:12px 16px;border-radius:12px;border:1.5px solid #d0e8ff;font-size:1rem;box-sizing:border-box;outline:none;" />
+      <div class="form-field">
+        <label class="form-label">이메일 *</label>
+        <input id="inq-email" type="email" class="form-input" placeholder="example@email.com" required />
       </div>
-      <div style="margin-bottom:20px;">
-        <label style="display:block;font-weight:700;color:#4a6fa2;margin-bottom:6px;">전화번호</label>
-        <input id="inq-phone" type="text" placeholder="010-0000-0000"
-          style="width:100%;padding:12px 16px;border-radius:12px;border:1.5px solid #d0e8ff;font-size:1rem;box-sizing:border-box;outline:none;" />
+      <div class="form-field">
+        <label class="form-label">전화번호</label>
+        <input id="inq-phone" type="text" class="form-input" placeholder="010-0000-0000" />
       </div>
-      <div style="margin-bottom:28px;">
-        <label style="display:block;font-weight:700;color:#4a6fa2;margin-bottom:6px;">문의 내용 *</label>
-        <textarea id="inq-message" rows="5" placeholder="문의 내용을 입력해 주세요..." required
-          style="width:100%;padding:12px 16px;border-radius:12px;border:1.5px solid #d0e8ff;font-size:1rem;box-sizing:border-box;resize:vertical;outline:none;"></textarea>
+      <div class="form-field-lg">
+        <label class="form-label">문의 내용 *</label>
+        <textarea id="inq-message" class="form-input" rows="5" placeholder="문의 내용을 입력해 주세요..." required></textarea>
       </div>
-      <button type="submit" id="inq-btn"
-        style="width:100%;padding:14px;border-radius:999px;background:linear-gradient(135deg,#8bcfff,#b6def5);border:none;color:#1f3250;font-size:1rem;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(84,142,218,0.3);">
+      <button type="submit" id="inq-btn" class="inquiry-submit-btn">
         문의 제출하기
       </button>
-      <p id="inq-error" style="display:none;color:#e55;text-align:center;margin-top:12px;font-size:.9rem;"></p>
+      <p id="inq-error" class="form-error"></p>
     </form>
   </section>
 
@@ -217,7 +212,7 @@
       const totalEl   = document.getElementById('cart-total');
 
       if (cart.length === 0) {
-        container.innerHTML = '<p style="text-align:center;color:#7a9abf;margin-top:40px;">장바구니가 비어 있습니다.</p>';
+        container.innerHTML = '<p class="cart-empty-msg">장바구니가 비어 있습니다.</p>';
         totalEl.textContent = '₩0';
         return;
       }
@@ -229,15 +224,15 @@
         const itemName = escapeHTML(item.name);
         const itemPrice = Number(item.price) || 0;
         return `
-          <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid #f0f0f0;">
-            <div style="flex:1;">
-              <div style="font-weight:700;color:#1f3250;font-size:.95rem;">${itemName}</div>
-              <div style="color:#7a9abf;font-size:.85rem;margin-top:2px;">₩${itemPrice.toLocaleString()} × ${item.qty}</div>
+          <div class="cart-item">
+            <div class="cart-item-info">
+              <div class="cart-item-name">${itemName}</div>
+              <div class="cart-item-meta">₩${itemPrice.toLocaleString()} × ${item.qty}</div>
             </div>
-            <div style="font-weight:800;color:#4f96de;min-width:70px;text-align:right;">₩${sub.toLocaleString()}</div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <button onclick="changeQty(${idx},-1)" style="width:28px;height:28px;border-radius:50%;border:1.5px solid #d0e8ff;background:#fff;color:#4f96de;font-weight:700;cursor:pointer;font-size:1rem;line-height:1;">−</button>
-              <button onclick="changeQty(${idx},1)"  style="width:28px;height:28px;border-radius:50%;border:1.5px solid #d0e8ff;background:#fff;color:#4f96de;font-weight:700;cursor:pointer;font-size:1rem;line-height:1;">+</button>
+            <div class="cart-item-sub">₩${sub.toLocaleString()}</div>
+            <div class="cart-qty">
+              <button onclick="changeQty(${idx},-1)" class="qty-btn">−</button>
+              <button onclick="changeQty(${idx},1)"  class="qty-btn">+</button>
             </div>
           </div>
         `;
@@ -267,18 +262,9 @@
 
     function selectPM(method) {
       selectedMethod = method;
+      const map = { CREDIT_CARD:'card', KAKAO:'kakao', SAMSUNG:'samsung', APPLE:'apple' };
       ['CREDIT_CARD','KAKAO','SAMSUNG','APPLE'].forEach(m => {
-        const map = { CREDIT_CARD:'card', KAKAO:'kakao', SAMSUNG:'samsung', APPLE:'apple' };
-        const el = document.getElementById('pm-' + map[m]);
-        if (m === method) {
-          el.style.border = '2px solid #4f96de';
-          el.style.background = '#eef6ff';
-          el.style.color = '#1f3250';
-        } else {
-          el.style.border = '2px solid #e0ecff';
-          el.style.background = '';
-          el.style.color = '#555';
-        }
+        document.getElementById('pm-' + map[m]).classList.toggle('selected', m === method);
       });
     }
 
@@ -341,7 +327,7 @@
         const list = document.getElementById('product-list');
 
         if (!products || products.length === 0) {
-          list.innerHTML = '<p style="text-align:center;color:#7a9abf;grid-column:1/-1;">등록된 제품이 없습니다.</p>';
+          list.innerHTML = '<p class="list-msg">등록된 제품이 없습니다.</p>';
           return;
         }
 
@@ -357,26 +343,24 @@
           const isSoldOut = leftCount <= 0;
 
           return `
-            <div style="background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.07);transition:transform .2s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
+            <div class="product-card">
               ${imagePath
-                ? `<img src="/${escapeAttr(imagePath)}" alt="${nameAttr}" style="width:100%;height:200px;object-fit:cover;" />`
-                : `<div style="width:100%;height:200px;background:linear-gradient(135deg,#cce8ff,#eff6ff);display:flex;align-items:center;justify-content:center;font-size:3rem;">🍡</div>`
+                ? `<img src="/${escapeAttr(imagePath)}" alt="${nameAttr}" class="product-card-img" />`
+                : `<div class="product-card-placeholder">🍡</div>`
               }
-              <div style="padding:20px;">
-                <h3 style="margin:0 0 6px;color:#1f3250;font-size:1.1rem;">${name}</h3>
-                <p style="margin:0 0 12px;color:#7a9abf;font-size:.85rem;">${collection}</p>
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-                  <span style="font-weight:800;color:#4f96de;font-size:1.1rem;">₩${price.toLocaleString()}</span>
-                  <span style="font-size:.8rem;color:${isSoldOut ? '#e57373' : '#aaa'};">재고: ${leftCount}</span>
+              <div class="product-card-body">
+                <h3>${name}</h3>
+                <p class="product-collection">${collection}</p>
+                <div class="product-price-row">
+                  <span class="product-price">₩${price.toLocaleString()}</span>
+                  <span class="product-stock${isSoldOut ? ' out' : ''}">재고: ${leftCount}</span>
                 </div>
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                  <button class="like-product-btn" data-id="${id}" style="display:flex;align-items:center;gap:5px;background:none;border:1.5px solid #ffd0d0;border-radius:999px;padding:5px 14px;cursor:pointer;font-size:.85rem;color:#e57373;font-weight:600;transition:all .2s;" onmouseover="this.style.background='#fff0f0'" onmouseout="this.style.background='none'">
+                <div class="product-like-row">
+                  <button class="like-product-btn" data-id="${id}">
                     ❤️ <span id="likes-${id}">${likes}</span>
                   </button>
                 </div>
-                <button class="add-cart-btn" data-id="${id}" data-name="${nameAttr}" data-price="${price}" ${isSoldOut ? 'disabled' : ''}
-                  style="width:100%;padding:10px;border-radius:999px;background:linear-gradient(135deg,#8bcfff,#b6def5);border:none;color:#1f3250;font-weight:700;cursor:${isSoldOut ? 'not-allowed' : 'pointer'};font-size:.9rem;transition:opacity .2s;opacity:${isSoldOut ? '.55' : '1'};"
-                  onmouseover="if(!this.disabled)this.style.opacity='.85'" onmouseout="if(!this.disabled)this.style.opacity='1'">
+                <button class="add-cart-btn" data-id="${id}" data-name="${nameAttr}" data-price="${price}" ${isSoldOut ? 'disabled' : ''}>
                   ${isSoldOut ? '품절' : '🛒 담기'}
                 </button>
               </div>
@@ -396,7 +380,7 @@
           });
         });
       } catch (err) {
-        document.getElementById('product-list').innerHTML = '<p style="text-align:center;color:#e55;grid-column:1/-1;">제품을 불러오지 못했습니다.</p>';
+        document.getElementById('product-list').innerHTML = '<p class="list-msg error">제품을 불러오지 못했습니다.</p>';
       }
     }
 
@@ -459,7 +443,7 @@
   </script>
 
   <!-- Cart toast notification -->
-  <div id="cart-toast" style="position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:#1f3250;color:#fff;padding:12px 24px;border-radius:999px;font-weight:600;font-size:.9rem;opacity:0;transition:opacity .3s,transform .3s;z-index:999;pointer-events:none;"></div>
+  <div id="cart-toast"></div>
 
 </body>
 

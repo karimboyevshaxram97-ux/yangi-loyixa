@@ -2,12 +2,12 @@
 
 <body>
   <!-- Toast -->
-  <div id="appToast" style="display:none;position:fixed;top:20px;right:20px;z-index:9999;min-width:280px;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
-    <div id="toastHeader" style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
-      <strong id="toastTitle" style="font-size:.9rem;"></strong>
-      <button onclick="document.getElementById('appToast').style.display='none'" style="background:none;border:none;font-size:1.2rem;cursor:pointer;line-height:1;">&times;</button>
+  <div id="appToast">
+    <div id="toastHeader">
+      <strong id="toastTitle"></strong>
+      <button onclick="document.getElementById('appToast').style.display='none'" class="toast-close">&times;</button>
     </div>
-    <div id="toastBody" style="padding:8px 16px 14px;font-size:.9rem;background:#fff;color:#2d3e57;"></div>
+    <div id="toastBody"></div>
   </div>
 
   <div class="container mt-4">
@@ -18,9 +18,9 @@
         <a href="/admin/product/all" class="btn btn-outline-light btn-sm mr-2">제품</a>
         <a href="/admin/user/all"    class="btn btn-light btn-sm mr-2">사용자</a>
         <a href="/admin/order/all"   class="btn btn-outline-light btn-sm mr-2">주문</a>
-        <span style="position:relative;display:inline-block;margin-right:.5rem;">
+        <span class="nav-badge-wrap">
           <a href="/admin/inquiry/all" class="btn btn-outline-light btn-sm">문의</a>
-          <span id="inquiry-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#e55353;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:.65rem;font-weight:800;align-items:center;justify-content:center;padding:0 4px;z-index:10;box-shadow:0 2px 6px rgba(229,83,83,.5);"></span>
+          <span id="inquiry-badge"></span>
         </span>
         <a href="/admin/logout"      class="btn btn-outline-light btn-sm"
           onclick="return confirm('로그아웃 하시겠습니까?')">로그아웃</a>
@@ -49,7 +49,7 @@
               <td><%= value.memberPhone %></td>
               <td>
                 <select class="form-control form-control-sm member-status"
-                  id="<%= value._id %>" style="width:120px;height:36px;">
+                  id="<%= value._id %>">
                   <option value="ACTIVE" <%= value.memberStatus === 'ACTIVE' ? 'selected' : '' %>>✅ 활성</option>
                   <option value="BLOCK" <%= value.memberStatus === 'BLOCK' ? 'selected' : '' %>>🚫 차단</option>
                   <option value="DELETE" <%= value.memberStatus === 'DELETE' ? 'selected' : '' %>>🗑 삭제</option>

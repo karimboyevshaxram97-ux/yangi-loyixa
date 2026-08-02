@@ -1,0 +1,110 @@
+/* ============================================================
+   ADMIN SHARED — barcha admin sahifalarda (products / orders /
+   users / inquiries) takrorlanadigan elementlar: toast,
+   navbar'dagi murojaat badge'i, jadval ustun kengliklari.
+   Inline style atributlaridan ko'chirilgan.
+   ============================================================ */
+
+/* ── Toast (showToast) — JS ochib-yopishda display block/none qiladi ── */
+#appToast {
+  display: none;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  min-width: 280px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+#toastHeader {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#toastTitle {
+  font-size: .9rem;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+#toastBody {
+  padding: 8px 16px 14px;
+  font-size: .9rem;
+  background: #fff;
+  color: #2d3e57;
+}
+
+/* ── Navbar'dagi "문의" badge'i — JS ko'rsatishda display:flex qiladi ── */
+.nav-badge-wrap {
+  position: relative;
+  display: inline-block;
+  margin-right: .5rem;
+}
+
+#inquiry-badge {
+  display: none;
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  background: #e55353;
+  color: #fff;
+  border-radius: 50%;
+  min-width: 18px;
+  height: 18px;
+  font-size: .65rem;
+  font-weight: 800;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(229, 83, 83, .5);
+}
+
+/* ── Jadval ustun kengliklari ── */
+.th-num {
+  width: 50px;
+}
+
+.th-status {
+  width: 140px;
+}
+
+.th-status-sm {
+  width: 100px;
+}
+
+/* ── Bo'sh ro'yxat xabari ── */
+.empty-note {
+  font-size: 1.1rem;
+}
+
+/* ── Status select'lar ── */
+.order-status-select {
+  height: 36px;
+}
+
+.member-status {
+  width: 120px;
+  height: 36px;
+}
+
+/* ── Orders: sana ustuni ── */
+.order-date {
+  font-size: .85rem;
+  color: #7a9abf;
+}
+
+/* ── Products: yangi mahsulot modali sarlavhasi ── */
+.gradient-header {
+  background: linear-gradient(135deg, #4f96de, #8bcfff);
+}
