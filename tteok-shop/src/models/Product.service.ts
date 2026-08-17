@@ -67,6 +67,11 @@ class ProductService {
     const result = await this.productModel
       .aggregate([
         { $match: match },
+        // Aggregation returns raw documents, bypassing Mongoose schema
+        // defaults — products created before productLikes existed on the
+        // schema have no such field in Mongo, so it would silently vanish
+        // from the list response (unlike the single-product findOne route).
+        { $addFields: { productLikes: { $ifNull: ["$productLikes", 0] } } },
         { $sort: sort },
         { $skip: (page - 1) * limit },
         { $limit: limit },
