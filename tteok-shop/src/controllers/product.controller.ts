@@ -52,10 +52,22 @@ productController.likeProduct = async (req: any, res: Response) => {
   try {
     console.log("likeProduct");
     const { id } = req.params;
-    const productLikes = await productService.likeProduct(req.member._id, id);
-    res.status(HttpCode.OK).json({ productLikes });
+    const result = await productService.likeProduct(req.member._id, id);
+    res.status(HttpCode.OK).json(result);
   } catch (err) {
     console.log("Error, likeProduct:", err);
+    if (err instanceof Errors) res.status(err.code).json(err);
+    else res.status(Errors.standard.code).json(Errors.standard);
+  }
+};
+
+productController.getMyLikedProductIds = async (req: any, res: Response) => {
+  try {
+    console.log("getMyLikedProductIds");
+    const likedIds = await productService.getMyLikedProductIds(req.member._id);
+    res.status(HttpCode.OK).json({ likedIds });
+  } catch (err) {
+    console.log("Error, getMyLikedProductIds:", err);
     if (err instanceof Errors) res.status(err.code).json(err);
     else res.status(Errors.standard.code).json(Errors.standard);
   }

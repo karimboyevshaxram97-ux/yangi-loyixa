@@ -232,11 +232,11 @@ mobileController.getProduct = asyncHandler(
 mobileController.likeProduct = asyncHandler(
   "mobile:likeProduct",
   async (req, res) => {
-    const productLikes = await productService.likeProduct(
+    const result = await productService.likeProduct(
       req.member._id,
       req.params.id
     );
-    apiOk(res, { productLikes });
+    apiOk(res, result);
   }
 );
 

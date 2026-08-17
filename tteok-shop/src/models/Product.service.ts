@@ -108,7 +108,10 @@ class ProductService {
     return result;
   }
 
-  public async likeProduct(memberId: any, id: string): Promise<number> {
+  public async likeProduct(
+    memberId: any,
+    id: string
+  ): Promise<{ productLikes: number; liked: boolean }> {
     const productId = shapeIntoMongooseObjectId(id);
     const input: ViewInput = {
       memberId: shapeIntoMongooseObjectId(memberId),
@@ -116,20 +119,32 @@ class ProductService {
       viewGroup: ViewGroup.LIKE,
     };
 
-    // Har bir foydalanuvchi bitta mahsulotni faqat bir marta like qila oladi
+    // Toggle: like allaqachon bosilgan bo'lsa bekor qilinadi, aks holda qo'yiladi
     const existLike = await this.viewService.checkViewExistence(input);
+    const liked = !existLike;
+
     if (existLike) {
-      const product = await this.productModel.findById(productId).exec();
-      if (!product) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
-      return product.productLikes;
+      await this.viewService.deleteView(input);
+    } else {
+      await this.viewService.insertMemberView(input);
     }
 
-    await this.viewService.insertMemberView(input);
     const result = await this.productModel
-      .findByIdAndUpdate(productId, { $inc: { productLikes: 1 } }, { new: true })
+      .findByIdAndUpdate(
+        productId,
+        { $inc: { productLikes: liked ? 1 : -1 } },
+        { new: true }
+      )
       .exec();
     if (!result) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
-    return result.productLikes;
+    return { productLikes: result.productLikes, liked };
+  }
+
+  public async getMyLikedProductIds(memberId: any): Promise<string[]> {
+    return await this.viewService.getMemberViewRefIds(
+      shapeIntoMongooseObjectId(memberId),
+      ViewGroup.LIKE
+    );
   }
 
   public async getAllProducts(): Promise<Product[]> {

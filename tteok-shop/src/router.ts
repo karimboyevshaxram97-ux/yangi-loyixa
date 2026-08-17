@@ -33,6 +33,7 @@ router.get("/member/top-users", memberController.getTopUsers);
 
 /** Product **/
 router.get("/product/all", productController.getProducts);
+router.get("/product/likes/mine", memberController.verifyAuth, productController.getMyLikedProductIds);
 router.post("/product/like/:id", memberController.verifyAuth, productController.likeProduct);
 router.get("/product/:id", memberController.retrieveAuth, productController.getProduct);
 
